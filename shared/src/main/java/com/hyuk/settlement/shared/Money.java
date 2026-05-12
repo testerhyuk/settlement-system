@@ -1,0 +1,46 @@
+package com.hyuk.settlement.shared;
+
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+@Getter
+@EqualsAndHashCode
+public class Money {
+    private BigDecimal amount;
+    private Currency currency;
+    public static final Money ZERO = new Money(BigDecimal.ZERO, Currency.KRW);
+
+    public Money(BigDecimal amount, Currency currency) {
+        this.amount = amount;
+        this.currency = currency;
+    }
+
+    public Money plus(Money other) {
+        if (!this.currency.equals(other.currency)) throw new RuntimeException("통화가 일치하지 않습니다");
+        return new Money(this.amount.add(other.amount), this.currency);
+    }
+
+    public Money minus(Money other) {
+        if (!this.currency.equals(other.currency)) throw new RuntimeException("통화가 일치하지 않습니다");
+        return new Money(this.amount.subtract(other.amount), this.currency);
+    }
+
+    public Money times(BigDecimal rate) {
+        return new Money(this.amount.multiply(rate).setScale(2, RoundingMode.HALF_UP), this.currency);
+    }
+
+    public boolean isNegative() {
+        return this.amount.compareTo(BigDecimal.ZERO) < 0;
+    }
+
+    public boolean isZero() {
+        return this.amount.compareTo(BigDecimal.ZERO) == 0;
+    }
+
+    public static Money of(long amount) {
+        return new Money(BigDecimal.valueOf(amount), Currency.KRW);
+    }
+}

@@ -1,0 +1,17 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation project(':shared')
+    implementation project(':merchant')
+    implementation project(':transaction')
+    implementation project(':fee-policy')
+    implementation project(':ledger')
+    implementation project(':settlement')
+    implementation project(':payout')
+    implementation project(':infrastructure')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.h2database:h2'
+}

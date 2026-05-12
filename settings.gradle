@@ -1,0 +1,12 @@
+rootProject.name = 'settlement-system'
+
+include ':api-server'
+include ':batch-server'
+include ':shared'
+include ':merchant'
+include ':transaction'
+include ':fee-policy'
+include ':ledger'
+include ':settlement'
+include ':payout'
+include ':infrastructure'
