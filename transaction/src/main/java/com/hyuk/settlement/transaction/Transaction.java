@@ -19,7 +19,7 @@ public class Transaction {
     private LocalDate settlementDate;
 
     public Transaction(String transactionId, String externalTransactionId, String merchantId, Money amount, TransactionType transactionType,
-                       LocalDate settlementDate, com.hyuk.settlement.shared.CardCompany cardCompany, LocalDateTime approvedAt) {
+                       CardCompany cardCompany, LocalDateTime approvedAt, LocalDate settlementDate) {
         if (transactionId == null || transactionId.isBlank()) throw new IllegalArgumentException("transactionId는 필수입니다");
 
         if (externalTransactionId == null || externalTransactionId.isBlank()) throw new IllegalArgumentException("externalTransactionId는 필수입니다");
