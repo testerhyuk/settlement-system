@@ -4,6 +4,8 @@ import com.hyuk.settlement.ledger.enums.Direction;
 import com.hyuk.settlement.shared.Money;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 public class JournalLine {
     private String lineId;
@@ -22,5 +24,14 @@ public class JournalLine {
         this.accountId = accountId;
         this.direction = direction;
         this.amount = amount;
+    }
+
+    public static JournalLine create(String accountId, Direction direction, Money amount) {
+        return new JournalLine(
+                "line-" + UUID.randomUUID().toString(),
+                accountId,
+                direction,
+                amount
+        );
     }
 }

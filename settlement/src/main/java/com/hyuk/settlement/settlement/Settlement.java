@@ -4,6 +4,8 @@ import com.hyuk.settlement.shared.Money;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.util.UUID;
+
 import com.hyuk.settlement.shared.SettlementCycle;
 
 @Getter
@@ -40,5 +42,20 @@ public class Settlement {
         this.netAmount = netAmount;
         this.status = status;
         this.settlementCycle = settlementCycle;
+    }
+
+    public static Settlement create(String merchantId, LocalDate targetDate, LocalDate payoutDate, Money grossAmount,
+                                    Money totalFee, Money netAmount, Status status, SettlementCycle settlementCycle) {
+        return new Settlement(
+                "settlement-" + UUID.randomUUID().toString(),
+                merchantId,
+                targetDate,
+                payoutDate,
+                grossAmount,
+                totalFee,
+                netAmount,
+                status,
+                settlementCycle
+        );
     }
 }

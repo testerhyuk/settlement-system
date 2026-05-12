@@ -7,6 +7,7 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 public class JournalEntry {
@@ -41,5 +42,16 @@ public class JournalEntry {
         this.referenceId = referenceId;
         this.description = description;
         this.lines = lines;
+    }
+
+    public static JournalEntry create(EntryType entryType, String referenceId, String description, List<JournalLine> lines) {
+        return new JournalEntry(
+                "journal-" + UUID.randomUUID().toString(),
+                LocalDateTime.now(),
+                entryType,
+                referenceId,
+                description,
+                lines
+        );
     }
 }
