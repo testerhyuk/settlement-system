@@ -1,6 +1,6 @@
 package com.hyuk.settlement.api.transaction;
 
-import com.hyuk.settlement.api.common.SettlementDateCalculator;
+import com.hyuk.settlement.shared.SettlementDateCalculator;
 import com.hyuk.settlement.feepolicy.FeePolicy;
 import com.hyuk.settlement.feepolicy.FeePolicyRepository;
 import com.hyuk.settlement.ledger.AccountConstants;
@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service

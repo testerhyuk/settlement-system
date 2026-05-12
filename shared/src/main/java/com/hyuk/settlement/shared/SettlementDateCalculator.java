@@ -1,15 +1,12 @@
-package com.hyuk.settlement.api.common;
+package com.hyuk.settlement.shared;
 
-import com.hyuk.settlement.shared.SettlementCycle;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-@Component
 @RequiredArgsConstructor
 public class SettlementDateCalculator {
     public LocalDate calculate(LocalDateTime approvedAt, SettlementCycle settlementCycle) {
@@ -29,6 +26,18 @@ public class SettlementDateCalculator {
         }
 
         throw new IllegalArgumentException("정산 주기가 잘못되었습니다");
+    }
+
+    public LocalDate calculatePayoutDate(LocalDate targetDate) {
+        LocalDate nextDay = targetDate.plusDays(1);
+
+        if (nextDay.getDayOfWeek() == DayOfWeek.SATURDAY) {
+            return nextDay.plusDays(2);
+        } else if (nextDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            return nextDay.plusDays(1);
+        }
+
+        return nextDay;
     }
 
     private LocalDate skipWeekend(LocalDate date) {

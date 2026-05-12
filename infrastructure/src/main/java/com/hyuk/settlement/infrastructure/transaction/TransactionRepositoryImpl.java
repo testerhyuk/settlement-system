@@ -35,4 +35,9 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     public List<Transaction> findByMerchantIdAndSettlementDate(String merchantId, LocalDate settlementDate) {
         return transactionJpaRepository.findByMerchantIdAndSettlementDate(merchantId, settlementDate).stream().map(TransactionEntity::toDomain).toList();
     }
+
+    @Override
+    public List<String> findDistinctMerchantIdsBySettlementDate(LocalDate settlementDate) {
+        return transactionJpaRepository.findDistinctMerchantIdsBySettlementDate(settlementDate);
+    }
 }
