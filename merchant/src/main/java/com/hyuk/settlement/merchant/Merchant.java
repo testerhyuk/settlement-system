@@ -4,6 +4,8 @@ import lombok.Getter;
 import com.hyuk.settlement.shared.SettlementCycle;
 import com.hyuk.settlement.shared.BankAccount;
 
+import java.util.UUID;
+
 @Getter
 public class Merchant {
     private String merchantId;
@@ -38,5 +40,15 @@ public class Merchant {
         this.name = name;
         this.bankAccount = bankAccount;
         this.settlementCycle = settlementCycle;
+    }
+
+    public static Merchant create(String businessNumber, String name, BankAccount bankAccount, SettlementCycle settlementCycle) {
+        return new Merchant(
+                "merchant-" + UUID.randomUUID().toString(),
+                businessNumber,
+                name,
+                bankAccount,
+                settlementCycle
+        );
     }
 }

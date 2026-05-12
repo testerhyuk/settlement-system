@@ -23,4 +23,9 @@ public class MerchantRepositoryImpl implements MerchantRepository {
     public Optional<Merchant> findById(String id) {
         return merchantJpaRepository.findById(id).map(MerchantEntity::toDomain);
     }
+
+    @Override
+    public Optional<Merchant> findByBusinessNumber(String businessNumber) {
+        return merchantJpaRepository.findByBusinessNumber(businessNumber).map(MerchantEntity::toDomain);
+    }
 }

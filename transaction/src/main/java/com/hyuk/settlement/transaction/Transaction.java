@@ -5,6 +5,8 @@ import lombok.Getter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
+
 import com.hyuk.settlement.shared.CardCompany;
 
 @Getter
@@ -44,5 +46,19 @@ public class Transaction {
         this.cardCompany = cardCompany;
         this.approvedAt = approvedAt;
         this.settlementDate = settlementDate;
+    }
+
+    public static Transaction create(String externalTransactionId, String merchantId, Money amount,
+                                     TransactionType transactionType, CardCompany cardCompany, LocalDateTime approvedAt, LocalDate settlementDate) {
+        return new Transaction(
+                "transaction-" + UUID.randomUUID().toString(),
+                externalTransactionId,
+                merchantId,
+                amount,
+                transactionType,
+                cardCompany,
+                approvedAt,
+                settlementDate
+        );
     }
 }
