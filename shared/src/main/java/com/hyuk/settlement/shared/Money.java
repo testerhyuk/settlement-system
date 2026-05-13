@@ -1,13 +1,12 @@
 package com.hyuk.settlement.shared;
 
-import lombok.EqualsAndHashCode;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Getter
-@EqualsAndHashCode
 public class Money {
     private BigDecimal amount;
     private Currency currency;
@@ -32,10 +31,12 @@ public class Money {
         return new Money(this.amount.multiply(rate).setScale(2, RoundingMode.HALF_UP), this.currency);
     }
 
+    @JsonIgnore
     public boolean isNegative() {
         return this.amount.compareTo(BigDecimal.ZERO) < 0;
     }
 
+    @JsonIgnore
     public boolean isZero() {
         return this.amount.compareTo(BigDecimal.ZERO) == 0;
     }

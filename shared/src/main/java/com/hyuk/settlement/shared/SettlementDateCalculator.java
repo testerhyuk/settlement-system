@@ -1,12 +1,14 @@
 package com.hyuk.settlement.shared;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+@Component
 @RequiredArgsConstructor
 public class SettlementDateCalculator {
     public LocalDate calculate(LocalDateTime approvedAt, SettlementCycle settlementCycle) {
@@ -29,15 +31,7 @@ public class SettlementDateCalculator {
     }
 
     public LocalDate calculatePayoutDate(LocalDate targetDate) {
-        LocalDate nextDay = targetDate.plusDays(1);
-
-        if (nextDay.getDayOfWeek() == DayOfWeek.SATURDAY) {
-            return nextDay.plusDays(2);
-        } else if (nextDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            return nextDay.plusDays(1);
-        }
-
-        return nextDay;
+        return skipWeekend(targetDate.plusDays(1));
     }
 
     private LocalDate skipWeekend(LocalDate date) {

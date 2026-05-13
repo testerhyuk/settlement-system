@@ -34,14 +34,14 @@ public class JournalEntry {
                 .map(JournalLine::getAmount)
                 .reduce(Money.ZERO, Money::plus);
 
-        if (!sumDebit.equals(sumCredit)) throw new IllegalArgumentException("차변과 대변의 합은 항상 일치해야 합니다");
+        if (sumDebit.getAmount().compareTo(sumCredit.getAmount()) != 0) throw new IllegalArgumentException("차변과 대변의 합은 항상 일치해야 합니다");
 
         this.entryId = entryId;
         this.occurredAt = occurredAt;
         this.entryType = entryType;
         this.referenceId = referenceId;
         this.description = description;
-        this.lines = lines;
+        this.lines = List.copyOf(lines); // 불변 리스트
     }
 
     public static JournalEntry create(EntryType entryType, String referenceId, String description, List<JournalLine> lines) {

@@ -12,11 +12,11 @@ import java.math.BigDecimal;
 @Service
 @RequiredArgsConstructor
 public class LedgerService {
-    private final JournalLineRepository journalLineJpaRepository;
+    private final JournalLineRepository journalLineRepository;
 
     public Money getBalance(String accountId, Currency currency) {
-        BigDecimal debit = journalLineJpaRepository.sumByAccountIdAndDirection(accountId, Direction.DEBIT);
-        BigDecimal credit = journalLineJpaRepository.sumByAccountIdAndDirection(accountId, Direction.CREDIT);
+        BigDecimal debit = journalLineRepository.sumByAccountIdAndDirection(accountId, Direction.DEBIT);
+        BigDecimal credit = journalLineRepository.sumByAccountIdAndDirection(accountId, Direction.CREDIT);
 
         debit = debit != null ? debit : BigDecimal.ZERO;
         credit = credit != null ? credit : BigDecimal.ZERO;

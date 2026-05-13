@@ -4,12 +4,14 @@ import com.hyuk.settlement.merchant.Merchant;
 import com.hyuk.settlement.merchant.MerchantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class MerchantService {
     private final MerchantRepository merchantRepository;
 
+    @Transactional
     public MerchantResponse saveMerchant(RegisterMerchantRequest registerMerchantRequest) {
         merchantRepository.findByBusinessNumber(registerMerchantRequest.getBusinessNumber())
                 .ifPresent(m -> { throw new IllegalStateException("이미 등록된 가맹점입니다"); });
@@ -26,6 +28,7 @@ public class MerchantService {
         return convertToMerchantResponse(merchant);
     }
 
+    @Transactional(readOnly = true)
     public MerchantResponse findById(String merchantId) {
         return merchantRepository.findById(merchantId)
                 .map(this::convertToMerchantResponse)

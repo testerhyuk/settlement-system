@@ -31,7 +31,9 @@ public class Settlement {
         if (netAmount == null) throw new IllegalArgumentException("최종 지급액은 필수입니다");
         if (status == null) throw new IllegalArgumentException("정산 상태는 필수입니다");
         if (settlementCycle == null) throw new IllegalArgumentException("정산 주기는 필수입니다");
-        if (!netAmount.equals(grossAmount.minus(totalFee))) throw new IllegalArgumentException("netAmount는 grossAmount에서 totalFee를 뺀 값이어야 합니다");
+        if (netAmount.getAmount().compareTo(grossAmount.minus(totalFee).getAmount()) != 0) {
+            throw new IllegalArgumentException("netAmount는 grossAmount에서 totalFee를 뺀 값이어야 합니다");
+        }
 
         this.settlementId = settlementId;
         this.merchantId = merchantId;
@@ -45,7 +47,7 @@ public class Settlement {
     }
 
     public static Settlement create(String merchantId, LocalDate targetDate, LocalDate payoutDate, Money grossAmount,
-                                    Money totalFee, Money netAmount, Status status, SettlementCycle settlementCycle) {
+                                    Money totalFee, Money netAmount, SettlementCycle settlementCycle) {
         return new Settlement(
                 "settlement-" + UUID.randomUUID().toString(),
                 merchantId,
@@ -54,7 +56,7 @@ public class Settlement {
                 grossAmount,
                 totalFee,
                 netAmount,
-                status,
+                Status.CALCULATED,
                 settlementCycle
         );
     }

@@ -67,7 +67,7 @@ public class TransactionService {
 
         Money fee = transaction.getAmount().times(feePolicy.getFeeRate());
 
-        Money money = transaction.getAmount().minus(fee);
+        Money netAmount = transaction.getAmount().minus(fee);
 
         EntryType entryType;
         List<JournalLine> lines;
@@ -76,13 +76,13 @@ public class TransactionService {
             entryType = EntryType.PAYMENT;
             lines = List.of(
                     JournalLine.create(AccountConstants.CARD_RECEIVABLE, Direction.DEBIT, transaction.getAmount()),
-                    JournalLine.create("account-payable-" + request.getMerchantId(), Direction.CREDIT, money),
+                    JournalLine.create("account-payable-" + request.getMerchantId(), Direction.CREDIT, netAmount),
                     JournalLine.create(AccountConstants.FEE_REVENUE, Direction.CREDIT, fee)
             );
         } else {
             entryType = request.getTransactionType() == TransactionType.CANCEL ? EntryType.CANCEL : EntryType.PARTIAL_REFUND;
             lines = List.of(
-                    JournalLine.create("account-payable-" + request.getMerchantId(), Direction.DEBIT, money),
+                    JournalLine.create("account-payable-" + request.getMerchantId(), Direction.DEBIT, netAmount),
                     JournalLine.create(AccountConstants.FEE_REVENUE, Direction.DEBIT, fee),
                     JournalLine.create(AccountConstants.CARD_RECEIVABLE, Direction.CREDIT, transaction.getAmount())
             );
@@ -91,7 +91,7 @@ public class TransactionService {
         JournalEntry journalEntry = JournalEntry.create(
                 entryType,
                 transaction.getTransactionId(),
-                "가맹점 결제 " + transaction.getAmount(),
+                "가맹점 결제 " + transaction.getMerchantId() + " " + transaction.getAmount().getAmount() + "원",
                 lines
         );
 
