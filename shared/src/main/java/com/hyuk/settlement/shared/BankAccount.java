@@ -1,8 +1,10 @@
 package com.hyuk.settlement.shared;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 public class BankAccount {
     private String bankName;
     private String accountNumber;
