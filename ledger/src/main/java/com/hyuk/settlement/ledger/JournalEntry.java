@@ -41,7 +41,7 @@ public class JournalEntry {
         this.entryType = entryType;
         this.referenceId = referenceId;
         this.description = description;
-        this.lines = lines;
+        this.lines = List.copyOf(lines); // 불변 리스트
     }
 
     public static JournalEntry create(EntryType entryType, String referenceId, String description, List<JournalLine> lines) {

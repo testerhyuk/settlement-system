@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class LedgerController {
     private final LedgerService ledgerService;
 
-    @GetMapping("/{accountId}/{currency}")
+    @GetMapping("/{accountId}")
     public ResponseEntity<Money> getBalance(@PathVariable("accountId") String accountId, @RequestParam(defaultValue = "KRW") String currency) {
         Currency curr = Currency.valueOf(currency);
 

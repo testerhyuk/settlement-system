@@ -31,15 +31,7 @@ public class SettlementDateCalculator {
     }
 
     public LocalDate calculatePayoutDate(LocalDate targetDate) {
-        LocalDate nextDay = targetDate.plusDays(1);
-
-        if (nextDay.getDayOfWeek() == DayOfWeek.SATURDAY) {
-            return nextDay.plusDays(2);
-        } else if (nextDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            return nextDay.plusDays(1);
-        }
-
-        return nextDay;
+        return skipWeekend(targetDate.plusDays(1));
     }
 
     private LocalDate skipWeekend(LocalDate date) {
