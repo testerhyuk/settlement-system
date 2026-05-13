@@ -4,4 +4,5 @@ public class AccountConstants {
     public static final String CARD_RECEIVABLE = "account-card-receivable";   // 카드사 미수금
     public static final String FEE_REVENUE = "account-fee-revenue";           // 수수료 수익
     public static final String SETTLEMENT_PENDING = "account-settlement-pending"; // 정산 대기 계정
+    public static final String MERCHANT_SENDABLE = "account-merchant-sendable"; // 가맹점 송금
 }
