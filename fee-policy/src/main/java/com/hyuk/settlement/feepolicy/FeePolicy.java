@@ -5,6 +5,7 @@ import com.hyuk.settlement.shared.CardCompany;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 public class FeePolicy {
@@ -32,5 +33,16 @@ public class FeePolicy {
         this.feeRate = feeRate;
         this.effectiveFrom = effectiveFrom;
         this.effectiveTo = effectiveTo;
+    }
+
+    public static FeePolicy create(String merchantId, CardCompany cardCompany, BigDecimal feeRate, LocalDate effectiveFrom, LocalDate effectiveTo) {
+        return new FeePolicy(
+                "feepolicy-" + UUID.randomUUID().toString(),
+                merchantId,
+                cardCompany,
+                feeRate,
+                effectiveFrom,
+                effectiveTo
+        );
     }
 }

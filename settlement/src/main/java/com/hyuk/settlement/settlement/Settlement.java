@@ -58,4 +58,8 @@ public class Settlement {
                 settlementCycle
         );
     }
+
+    public void updateStatus(Status newStatus) {
+        this.status = newStatus;
+    }
 }

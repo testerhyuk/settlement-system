@@ -4,6 +4,8 @@ import com.hyuk.settlement.shared.Money;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
+
 import com.hyuk.settlement.shared.BankAccount;
 
 @Getter
@@ -41,5 +43,32 @@ public class Payout {
         this.failureType = failureType;
         this.failureReason = failureReason;
         this.completedAt = completedAt;
+    }
+
+    public static Payout create(String settlementId, String merchantId, Money amount, BankAccount bankAccount, Status status) {
+        return new Payout(
+                "payout-" + UUID.randomUUID().toString(),
+                settlementId,
+                merchantId,
+                amount,
+                bankAccount,
+                status,
+                0,
+                null,
+                null,
+                null
+        );
+    }
+
+    public void updateStatus(Status status) {
+        this.status = status;
+    }
+
+    public void attemptCountPlusOne() {
+        this.attemptCount++;
+    }
+
+    public void updateFailureType(FailureType failureType) {
+        this.failureType = failureType;
     }
 }
