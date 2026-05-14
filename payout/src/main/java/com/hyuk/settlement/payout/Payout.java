@@ -60,15 +60,18 @@ public class Payout {
         );
     }
 
-    public void updateStatus(Status status) {
-        this.status = status;
+    public Payout withStatus(Status status) {
+        return new Payout(payoutId, settlementId, merchantId, amount, bankAccount,
+                status, attemptCount, failureType, failureReason, completedAt);
     }
 
-    public void attemptCountPlusOne() {
-        this.attemptCount++;
+    public Payout withFailureType(FailureType failureType) {
+        return new Payout(payoutId, settlementId, merchantId, amount, bankAccount,
+                status, attemptCount, failureType, failureReason, completedAt);
     }
 
-    public void updateFailureType(FailureType failureType) {
-        this.failureType = failureType;
+    public Payout withAttemptCountPlusOne() {
+        return new Payout(payoutId, settlementId, merchantId, amount, bankAccount,
+                status, attemptCount + 1, failureType, failureReason, completedAt);
     }
 }

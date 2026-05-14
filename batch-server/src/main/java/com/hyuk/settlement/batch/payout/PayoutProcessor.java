@@ -57,22 +57,22 @@ public class PayoutProcessor {
 
             if (transferResult) {
                 success = true;
-                payout.updateStatus(com.hyuk.settlement.payout.Status.COMPLETED);
+                payout = payout.withStatus(com.hyuk.settlement.payout.Status.COMPLETED);
                 s.updateStatus(Status.PAID);
                 payoutRepository.save(payout);
                 settlementRepository.save(s);
                 recordToJournal(s, payout);
                 break;
             } else {
-                payout.attemptCountPlusOne();
-                payout.updateFailureType(FailureType.TEMPORARY);
+                payout = payout.withAttemptCountPlusOne();
+                payout = payout.withFailureType(FailureType.TEMPORARY);
                 payoutRepository.save(payout);
             }
         }
 
         if (!success) {
-            payout.updateFailureType(FailureType.PERMANENT);
-            payout.updateStatus(com.hyuk.settlement.payout.Status.FAILED);
+            payout = payout.withFailureType(FailureType.PERMANENT);
+            payout = payout.withStatus(com.hyuk.settlement.payout.Status.FAILED);
             payoutRepository.save(payout);
         }
     }

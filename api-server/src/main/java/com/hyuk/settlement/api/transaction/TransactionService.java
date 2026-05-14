@@ -65,7 +65,7 @@ public class TransactionService {
                 request.getApprovedAt().toLocalDate())
                 .orElseThrow(() -> new IllegalStateException("수수료 정보가 없습니다"));
 
-        Money fee = transaction.getAmount().times(feePolicy.getFeeRate());
+        Money fee = transaction.getAmount().times(feePolicy.getFeeRate(), transaction.getAmount().getCurrency());
 
         Money netAmount = transaction.getAmount().minus(fee);
 

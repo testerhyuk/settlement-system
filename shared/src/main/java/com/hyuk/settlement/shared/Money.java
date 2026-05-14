@@ -27,8 +27,8 @@ public class Money {
         return new Money(this.amount.subtract(other.amount), this.currency);
     }
 
-    public Money times(BigDecimal rate) {
-        return new Money(this.amount.multiply(rate).setScale(2, RoundingMode.HALF_UP), this.currency);
+    public Money times(BigDecimal rate, Currency currency) {
+        return new Money(this.amount.multiply(rate).setScale(currency.getScale(), RoundingMode.HALF_UP), this.currency);
     }
 
     @JsonIgnore

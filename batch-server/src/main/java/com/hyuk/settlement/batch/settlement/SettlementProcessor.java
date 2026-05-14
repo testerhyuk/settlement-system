@@ -13,6 +13,7 @@ import com.hyuk.settlement.merchant.MerchantRepository;
 import com.hyuk.settlement.settlement.Settlement;
 import com.hyuk.settlement.settlement.SettlementRepository;
 import com.hyuk.settlement.settlement.Status;
+import com.hyuk.settlement.shared.Currency;
 import com.hyuk.settlement.shared.Money;
 import com.hyuk.settlement.shared.SettlementCycle;
 import com.hyuk.settlement.shared.SettlementDateCalculator;
@@ -46,7 +47,7 @@ public class SettlementProcessor {
             FeePolicy feePolicy = feePolicyRepository.findActivePolicy(merchantId, transaction.getCardCompany(), targetDate)
                     .orElseThrow(() -> new RuntimeException("수수료 정책을 찾을 수 없습니다"));
 
-            Money fee = transaction.getAmount().times(feePolicy.getFeeRate());
+            Money fee = transaction.getAmount().times(feePolicy.getFeeRate(), transaction.getAmount().getCurrency());
             grossAmount = grossAmount.plus(transaction.getAmount());
             totalFee = totalFee.plus(fee);
         }
