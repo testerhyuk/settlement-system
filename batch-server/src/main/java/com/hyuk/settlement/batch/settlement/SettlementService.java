@@ -1,5 +1,6 @@
 package com.hyuk.settlement.batch.settlement;
 
+import com.hyuk.settlement.shared.Currency;
 import com.hyuk.settlement.transaction.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

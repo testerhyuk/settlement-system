@@ -1,6 +1,7 @@
 package com.hyuk.settlement.api.transaction;
 
 import com.hyuk.settlement.shared.CardCompany;
+import com.hyuk.settlement.shared.Currency;
 import com.hyuk.settlement.transaction.TransactionType;
 import lombok.Builder;
 import lombok.Getter;
