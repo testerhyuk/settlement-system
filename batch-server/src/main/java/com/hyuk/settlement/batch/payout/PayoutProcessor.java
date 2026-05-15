@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -57,7 +58,7 @@ public class PayoutProcessor {
 
             if (transferResult) {
                 success = true;
-                payout = payout.withStatus(com.hyuk.settlement.payout.Status.COMPLETED);
+                payout = payout.withStatus(com.hyuk.settlement.payout.Status.COMPLETED).withCompletedAt(LocalDateTime.now());
                 s.updateStatus(Status.PAID);
                 payoutRepository.save(payout);
                 settlementRepository.save(s);

@@ -26,7 +26,7 @@ public class Settlement {
         if (merchantId == null || merchantId.isBlank()) throw new IllegalArgumentException("merchantId는 필수입니다");
         if (targetDate == null) throw new IllegalArgumentException("정산 기준일은 필수입니다");
         if (payoutDate == null) throw new IllegalArgumentException("송금 예정일은 필수입니다");
-        if (grossAmount == null || grossAmount.isNegative()) throw new IllegalArgumentException("총 거래액이 없거나 음수가 아니어야 합니다");
+        if (grossAmount == null || grossAmount.isNegative()) throw new IllegalArgumentException("총 거래액은 0 이상이어야 합니다");
         if (totalFee == null) throw new IllegalArgumentException("총 수수료 금액은 필수입니다");
         if (netAmount == null) throw new IllegalArgumentException("최종 지급액은 필수입니다");
         if (status == null) throw new IllegalArgumentException("정산 상태는 필수입니다");

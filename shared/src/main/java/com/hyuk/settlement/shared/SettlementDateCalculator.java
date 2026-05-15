@@ -31,6 +31,7 @@ public class SettlementDateCalculator {
     }
 
     public LocalDate calculatePayoutDate(LocalDate targetDate) {
+
         return skipWeekend(targetDate.plusDays(1));
     }
 

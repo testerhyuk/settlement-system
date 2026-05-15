@@ -74,4 +74,9 @@ public class Payout {
         return new Payout(payoutId, settlementId, merchantId, amount, bankAccount,
                 status, attemptCount + 1, failureType, failureReason, completedAt);
     }
+
+    public Payout withCompletedAt(LocalDateTime completedAt) {
+        return new Payout(payoutId, settlementId, merchantId, amount, bankAccount,
+                status, attemptCount, failureType, failureReason, completedAt);
+    }
 }
