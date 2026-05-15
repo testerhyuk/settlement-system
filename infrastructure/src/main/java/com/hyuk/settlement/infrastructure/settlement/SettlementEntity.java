@@ -16,7 +16,9 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "settlement")
+@Table(name = "settlement", uniqueConstraints = @UniqueConstraint(
+        columnNames = {"merchantId", "target_date"}
+))
 public class SettlementEntity {
     @Id
     private String settlementId;
