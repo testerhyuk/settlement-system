@@ -60,10 +60,11 @@ class MoneyTest {
     }
 
     @Test
-    void 소수점_반올림_체크() {
+    void 화폐_종류에_따라_소수점_반올림_체크() {
         Money money = Money.of(7777);
         BigDecimal feeRate = BigDecimal.valueOf(0.025);
 
         assertThat(money.times(feeRate, Currency.USD).getAmount()).isEqualByComparingTo(BigDecimal.valueOf(194.43));
+        assertThat(money.times(feeRate, Currency.KRW).getAmount()).isEqualByComparingTo(BigDecimal.valueOf(194));
     }
 }

@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +78,9 @@ class PayoutProcessorTest {
         ArgumentCaptor<Payout> payoutArgumentCaptor = ArgumentCaptor.forClass(Payout.class);
         ArgumentCaptor<Settlement> settlementArgumentCaptor = ArgumentCaptor.forClass(Settlement.class);
 
+        LocalDateTime before = LocalDateTime.now();
         payoutProcessor.processEachPayout(settlement);
+        LocalDateTime after = LocalDateTime.now();
 
         verify(payoutRepository, times(2)).save(payoutArgumentCaptor.capture());
         verify(settlementRepository, times(1)).save(settlementArgumentCaptor.capture());
@@ -85,6 +88,22 @@ class PayoutProcessorTest {
         verify(payoutRepository).save(argThat(p -> p.getStatus() == Status.COMPLETED));
         verify(settlementRepository).save(argThat(s -> s.getStatus() == com.hyuk.settlement.settlement.Status.PAID));
         verify(journalEntryRepository, times(1)).save(any());
+
+        Payout completedPayout = payoutArgumentCaptor.getAllValues().stream()
+                .filter(p -> p.getStatus() == Status.COMPLETED)
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(completedPayout.getCompletedAt())
+                .isAfterOrEqualTo(before)
+                .isBeforeOrEqualTo(after);
+
+        Payout requestedPayout = payoutArgumentCaptor.getAllValues().stream()
+                .filter(p -> p.getStatus() == Status.REQUESTED)
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(requestedPayout.getCompletedAt()).isNull();
     }
 
     @Test
