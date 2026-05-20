@@ -1,9 +1,13 @@
 package com.hyuk.settlement.batch.settlement;
 
 import com.hyuk.settlement.infrastructure.redis.DistributedLockManager;
+import com.hyuk.settlement.merchant.Merchant;
+import com.hyuk.settlement.merchant.MerchantRepository;
+import com.hyuk.settlement.merchant.MerchantStatus;
 import com.hyuk.settlement.shared.Currency;
 import com.hyuk.settlement.transaction.TransactionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -11,10 +15,12 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SettlementService {
     private final TransactionRepository transactionRepository;
     private final SettlementProcessor settlementProcessor;
     private final DistributedLockManager distributedLockManager;
+    private final MerchantRepository merchantRepository;
 
     private final long TTL_SECONDS = 60;
 
@@ -22,6 +28,14 @@ public class SettlementService {
         List<String> targetMerchant = transactionRepository.findDistinctMerchantIdsBySettlementDate(targetDate);
 
         for (String merchantId : targetMerchant) {
+            Merchant merchant = merchantRepository.findById(merchantId)
+                    .orElseThrow(() -> new IllegalArgumentException("가맹점을 찾을 수 없습니다"));
+
+            if (merchant.getMerchantStatus() == MerchantStatus.SUSPENDED || merchant.getMerchantStatus() == MerchantStatus.INACTIVE) {
+                log.info("정산 스킵 - merchantId: {}, status: {}", merchantId, merchant.getMerchantStatus());
+                continue;
+            }
+
             boolean result = false;
 
             try {

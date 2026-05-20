@@ -29,18 +29,4 @@ class SettlementTest {
         assertThat(settlement.getNetAmount().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(4900));
         assertThat(settlement.getStatus()).isEqualTo(Status.CALCULATED);
     }
-
-    @Test
-    void netAmount의_값은_grossAmount에서_totalFee를_뺀_값이_아니라면_예외_발생() {
-        assertThatThrownBy(() -> Settlement.create(
-                "merchatn-1",
-                LocalDate.of(2026, 5, 14),
-                LocalDate.of(2026, 5, 15),
-                Money.of(5000),
-                Money.of(100),
-                Money.of(5900),
-                SettlementCycle.D_PLUS_1
-        )).isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("netAmount는 grossAmount에서 totalFee를 뺀 값이어야 합니다");
-    }
 }

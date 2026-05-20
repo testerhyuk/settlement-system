@@ -60,4 +60,8 @@ public class Merchant {
     public void changeBankAccount(BankAccount bankAccount) {
         this.bankAccount = bankAccount;
     }
+
+    public void changeStatus(MerchantStatus merchantStatus) {
+        this.merchantStatus = merchantStatus;
+    }
 }
