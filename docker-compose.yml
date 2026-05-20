@@ -1,0 +1,23 @@
+services:
+  # PostgreSQL
+  postgresql:
+    image: postgres:17
+    container_name: postgres-settlement
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=settlement-system
+      - POSTGRES_USER=hyuk
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Redis
+  redis:
+    image: redis:7
+    container_name: redis-settlement
+    ports:
+      - "6380:6379"
+
+volumes:
+  postgres_data:

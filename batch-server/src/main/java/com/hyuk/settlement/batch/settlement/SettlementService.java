@@ -31,7 +31,6 @@ public class SettlementService {
             } finally {
                 if(result) distributedLockManager.unlock("settlement:merchantId:" + merchantId);
             }
-
         }
     }
 
