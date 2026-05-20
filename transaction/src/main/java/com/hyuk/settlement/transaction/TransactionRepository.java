@@ -10,4 +10,6 @@ public interface TransactionRepository {
     boolean existsByExternalTransactionId(String externalTransactionId);
     List<Transaction> findByMerchantIdAndSettlementDate(String merchantId, LocalDate settlementDate);
     List<String> findDistinctMerchantIdsBySettlementDate(LocalDate settlementDate);
+
+    Optional<Transaction> findByExternalTransactionId(String externalTransactionId);
 }

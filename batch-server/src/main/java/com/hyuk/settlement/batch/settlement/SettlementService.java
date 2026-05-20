@@ -34,4 +34,22 @@ public class SettlementService {
 
         }
     }
+
+    // 정산 실패 재시도
+    public boolean retrySettlement(String merchantId, LocalDate targetDate) {
+        boolean result = false;
+        boolean success = false;
+
+        try {
+            result = distributedLockManager.tryLock("settlement:merchantId:" + merchantId, TTL_SECONDS);
+
+            if (result) settlementProcessor.processEachSettlement(merchantId, targetDate);
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        } finally {
+            if (result) distributedLockManager.unlock("settlement:merchantId:" + merchantId);
+        }
+    }
 }

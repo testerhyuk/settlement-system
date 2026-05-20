@@ -47,15 +47,33 @@ public class TransactionService {
 
         LocalDate calculatedDate = settlementDateCalculator.calculate(request.getApprovedAt(), settlementCycle);
 
-        Transaction transaction = Transaction.create(
-                request.getExternalTransactionId(),
-                request.getMerchantId(),
-                Money.of(request.getAmount().longValue()),
-                request.getTransactionType(),
-                request.getCardCompany(),
-                request.getApprovedAt(),
-                calculatedDate
-        );
+        Transaction transaction;
+
+        if (request.getTransactionType() == TransactionType.PAYMENT) {
+            transaction = Transaction.create(
+                    request.getExternalTransactionId(),
+                    request.getMerchantId(),
+                    Money.of(request.getAmount().longValue()),
+                    request.getTransactionType(),
+                    request.getCardCompany(),
+                    request.getApprovedAt(),
+                    calculatedDate
+            );
+        } else {
+            transactionRepository.findByExternalTransactionId(request.getOriginalTransactionId())
+                    .orElseThrow(() -> new IllegalStateException("원거래를 찾을 수 없습니다"));
+
+            transaction = Transaction.createCancelOrRefund(
+                    request.getExternalTransactionId(),
+                    request.getOriginalTransactionId(),
+                    request.getMerchantId(),
+                    Money.of(request.getAmount().longValue()),
+                    request.getTransactionType(),
+                    request.getCardCompany(),
+                    request.getApprovedAt(),
+                    calculatedDate
+            );
+        }
 
         transactionRepository.save(transaction);
 

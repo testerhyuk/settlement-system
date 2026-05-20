@@ -1,0 +1,1 @@
+ALTER TABLE transaction ADD COLUMN original_transaction_id VARCHAR(255);

@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface TransactionJpaRepository extends JpaRepository<TransactionEntity, String> {
     boolean existsByExternalTransactionId(String externalTransactionId);
@@ -13,4 +14,6 @@ public interface TransactionJpaRepository extends JpaRepository<TransactionEntit
 
     @Query("SELECT DISTINCT t.merchantId FROM TransactionEntity t WHERE t.settlementDate = :settlementDate")
     List<String> findDistinctMerchantIdsBySettlementDate(@Param("settlementDate") LocalDate settlementDate);
+
+    Optional<TransactionEntity> findByExternalTransactionId(String externalTransactionId);
 }

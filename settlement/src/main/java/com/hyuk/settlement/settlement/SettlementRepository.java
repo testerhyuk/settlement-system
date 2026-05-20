@@ -7,6 +7,7 @@ import java.util.Optional;
 public interface SettlementRepository {
     Settlement save(Settlement settlement);
     Optional<Settlement> findById(String id);
-    Optional<Settlement> findByMerchantIdAndTargetDate(String merchantId, LocalDate targetDate);
+    List<Settlement> findByMerchantIdAndStatus(String merchantId, Status status);
     List<Settlement> findByStatus(Status status);
+    boolean existsByMerchantIdAndStatusAndTargetDate(String merchantId, Status status, LocalDate targetDate);
 }

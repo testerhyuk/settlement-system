@@ -13,8 +13,9 @@ public class Merchant {
     private String name;
     private BankAccount bankAccount;
     private SettlementCycle settlementCycle;
+    private MerchantStatus merchantStatus;
 
-    public Merchant(String merchantId, String businessNumber, String name, BankAccount bankAccount, SettlementCycle settlementCycle) {
+    public Merchant(String merchantId, String businessNumber, String name, BankAccount bankAccount, SettlementCycle settlementCycle, MerchantStatus merchantStatus) {
         if (merchantId == null || merchantId.isBlank()) {
             throw new IllegalArgumentException("Merchant ID는 필수입니다");
         }
@@ -35,11 +36,14 @@ public class Merchant {
             throw new IllegalArgumentException("계좌번호는 필수입니다");
         }
 
+        if (merchantStatus == null) throw new IllegalArgumentException("가맹점 상태는 필수입니다");
+
         this.merchantId = merchantId;
         this.businessNumber = businessNumber;
         this.name = name;
         this.bankAccount = bankAccount;
         this.settlementCycle = settlementCycle;
+        this.merchantStatus = merchantStatus;
     }
 
     public static Merchant create(String businessNumber, String name, BankAccount bankAccount, SettlementCycle settlementCycle) {
@@ -48,7 +52,12 @@ public class Merchant {
                 businessNumber,
                 name,
                 bankAccount,
-                settlementCycle
+                settlementCycle,
+                MerchantStatus.ACTIVE
         );
+    }
+
+    public void changeBankAccount(BankAccount bankAccount) {
+        this.bankAccount = bankAccount;
     }
 }

@@ -23,6 +23,7 @@ public class TransactionEntity {
     private String transactionId;
     @Column(unique = true)
     private String externalTransactionId;
+    private String originalTransactionId;
     private String merchantId;
     private BigDecimal amount;
     @Enumerated(EnumType.STRING)
@@ -38,6 +39,7 @@ public class TransactionEntity {
         TransactionEntity transactionEntity = new TransactionEntity();
         transactionEntity.transactionId = transaction.getTransactionId();
         transactionEntity.externalTransactionId = transaction.getExternalTransactionId();
+        transactionEntity.originalTransactionId = transaction.getOriginalTransactionId();
         transactionEntity.merchantId = transaction.getMerchantId();
         transactionEntity.amount = transaction.getAmount().getAmount();
         transactionEntity.currency = transaction.getAmount().getCurrency();
@@ -53,6 +55,7 @@ public class TransactionEntity {
         return new Transaction(
                 transactionId,
                 externalTransactionId,
+                originalTransactionId,
                 merchantId,
                 new Money(amount, currency),
                 transactionType,

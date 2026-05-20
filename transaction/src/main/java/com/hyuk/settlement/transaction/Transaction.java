@@ -13,6 +13,7 @@ import com.hyuk.settlement.shared.CardCompany;
 public class Transaction {
     private String transactionId;
     private String externalTransactionId;
+    private String originalTransactionId;
     private String merchantId;
     private Money amount;
     private TransactionType transactionType;
@@ -20,8 +21,8 @@ public class Transaction {
     private LocalDateTime approvedAt;
     private LocalDate settlementDate;
 
-    public Transaction(String transactionId, String externalTransactionId, String merchantId, Money amount, TransactionType transactionType,
-                       CardCompany cardCompany, LocalDateTime approvedAt, LocalDate settlementDate) {
+    public Transaction(String transactionId, String externalTransactionId, String originalTransactionId, String merchantId, Money amount,
+                       TransactionType transactionType, CardCompany cardCompany, LocalDateTime approvedAt, LocalDate settlementDate) {
         if (transactionId == null || transactionId.isBlank()) throw new IllegalArgumentException("transactionId는 필수입니다");
 
         if (externalTransactionId == null || externalTransactionId.isBlank()) throw new IllegalArgumentException("externalTransactionId는 필수입니다");
@@ -40,6 +41,7 @@ public class Transaction {
 
         this.transactionId = transactionId;
         this.externalTransactionId = externalTransactionId;
+        this.originalTransactionId = originalTransactionId;
         this.merchantId = merchantId;
         this.amount = amount;
         this.transactionType = transactionType;
@@ -53,6 +55,26 @@ public class Transaction {
         return new Transaction(
                 "transaction-" + UUID.randomUUID().toString(),
                 externalTransactionId,
+                null,
+                merchantId,
+                amount,
+                transactionType,
+                cardCompany,
+                approvedAt,
+                settlementDate
+        );
+    }
+
+    public static Transaction createCancelOrRefund(String externalTransactionId, String originalTransactionId,
+                                                   String merchantId, Money amount, TransactionType transactionType,
+                                                   CardCompany cardCompany, LocalDateTime approvedAt, LocalDate settlementDate) {
+        if (originalTransactionId == null || originalTransactionId.isBlank())
+            throw new IllegalArgumentException("취소/환불 시 originalTransactionId는 필수입니다");
+
+        return new Transaction(
+                "transaction-" + UUID.randomUUID().toString(),
+                externalTransactionId,
+                originalTransactionId,
                 merchantId,
                 amount,
                 transactionType,

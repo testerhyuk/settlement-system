@@ -32,6 +32,7 @@ public class SettlementEntity {
     private Status status;
     @Enumerated(EnumType.STRING)
     private SettlementCycle settlementCycle;
+    private Integer retryCount;
 
     public static SettlementEntity from(Settlement settlement) {
         SettlementEntity settlementEntity = new SettlementEntity();
@@ -45,6 +46,7 @@ public class SettlementEntity {
         settlementEntity.currency = settlement.getGrossAmount().getCurrency();
         settlementEntity.status = settlement.getStatus();
         settlementEntity.settlementCycle = settlement.getSettlementCycle();
+        settlementEntity.retryCount = settlement.getRetryCount();
         return settlementEntity;
     }
 
@@ -58,7 +60,8 @@ public class SettlementEntity {
                 new Money(totalFee, currency),
                 new Money(netAmount, currency),
                 status,
-                settlementCycle
+                settlementCycle,
+                retryCount
         );
     }
 }

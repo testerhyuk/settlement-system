@@ -4,5 +4,9 @@ public enum Status {
     PENDING,
     CALCULATED,
     PAID,
-    FAILED
+    FAILED,
+    NEGATIVE_SETTLEMENT,
+    RECOVERY_REQUIRED,
+    RECOVERED,
+    RETRY_EXHAUSTED
 }

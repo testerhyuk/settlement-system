@@ -5,5 +5,6 @@ public enum EntryType {
     CANCEL,
     PARTIAL_REFUND,
     SETTLEMENT,
-    PAYOUT
+    PAYOUT,
+    NEGATIVE_SETTLEMENT_DEDUCTION
 }

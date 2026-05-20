@@ -40,4 +40,9 @@ public class TransactionRepositoryImpl implements TransactionRepository {
     public List<String> findDistinctMerchantIdsBySettlementDate(LocalDate settlementDate) {
         return transactionJpaRepository.findDistinctMerchantIdsBySettlementDate(settlementDate);
     }
+
+    @Override
+    public Optional<Transaction> findByExternalTransactionId(String externalTransactionId) {
+        return transactionJpaRepository.findByExternalTransactionId(externalTransactionId).map(TransactionEntity::toDomain);
+    }
 }

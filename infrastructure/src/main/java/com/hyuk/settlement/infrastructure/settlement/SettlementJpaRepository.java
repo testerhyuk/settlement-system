@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SettlementJpaRepository extends JpaRepository<SettlementEntity, String> {
-    Optional<SettlementEntity> findByMerchantIdAndTargetDate(String merchantId, LocalDate targetDate);
+    List<SettlementEntity> findByMerchantIdAndStatus(String merchantId, Status status);
     List<SettlementEntity> findByStatus(Status status);
+    boolean existsByMerchantIdAndStatusAndTargetDate(String merchantId, Status status, LocalDate targetDate);
 }

@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class RegisterTransactionRequest {
     private String externalTransactionId;
+    private String originalTransactionId;
     private String merchantId;
     private BigDecimal amount;
     private CardCompany cardCompany;

@@ -19,21 +19,20 @@ public class Settlement {
     private Money netAmount;
     private Status status;
     private SettlementCycle settlementCycle;
+    private Integer retryCount;
 
     public Settlement(String settlementId, String merchantId, LocalDate targetDate, LocalDate payoutDate,
-                      Money grossAmount, Money totalFee, Money netAmount, Status status, SettlementCycle settlementCycle) {
+                      Money grossAmount, Money totalFee, Money netAmount, Status status,
+                      SettlementCycle settlementCycle, Integer retryCount) {
         if (settlementId == null || settlementId.isBlank()) throw new IllegalArgumentException("settlementId는 필수입니다");
         if (merchantId == null || merchantId.isBlank()) throw new IllegalArgumentException("merchantId는 필수입니다");
         if (targetDate == null) throw new IllegalArgumentException("정산 기준일은 필수입니다");
         if (payoutDate == null) throw new IllegalArgumentException("송금 예정일은 필수입니다");
-        if (grossAmount == null || grossAmount.isNegative()) throw new IllegalArgumentException("총 거래액은 0 이상이어야 합니다");
+        if (grossAmount == null) throw new IllegalArgumentException("총 거래액은 필수입니다");
         if (totalFee == null) throw new IllegalArgumentException("총 수수료 금액은 필수입니다");
         if (netAmount == null) throw new IllegalArgumentException("최종 지급액은 필수입니다");
         if (status == null) throw new IllegalArgumentException("정산 상태는 필수입니다");
         if (settlementCycle == null) throw new IllegalArgumentException("정산 주기는 필수입니다");
-        if (netAmount.getAmount().compareTo(grossAmount.minus(totalFee).getAmount()) != 0) {
-            throw new IllegalArgumentException("netAmount는 grossAmount에서 totalFee를 뺀 값이어야 합니다");
-        }
 
         this.settlementId = settlementId;
         this.merchantId = merchantId;
@@ -44,10 +43,13 @@ public class Settlement {
         this.netAmount = netAmount;
         this.status = status;
         this.settlementCycle = settlementCycle;
+        this.retryCount = retryCount;
     }
 
     public static Settlement create(String merchantId, LocalDate targetDate, LocalDate payoutDate, Money grossAmount,
                                     Money totalFee, Money netAmount, SettlementCycle settlementCycle) {
+        Status amountStatus = netAmount.isNegative() ? Status.NEGATIVE_SETTLEMENT : Status.CALCULATED;
+
         return new Settlement(
                 "settlement-" + UUID.randomUUID().toString(),
                 merchantId,
@@ -56,12 +58,33 @@ public class Settlement {
                 grossAmount,
                 totalFee,
                 netAmount,
-                Status.CALCULATED,
-                settlementCycle
+                amountStatus,
+                settlementCycle,
+                0
         );
     }
 
     public void updateStatus(Status newStatus) {
         this.status = newStatus;
+    }
+
+    public static Settlement createFailed(String merchantId, LocalDate targetDate, LocalDate payoutDate,
+                                          SettlementCycle settlementCycle, Integer retryCount) {
+        return new Settlement(
+                "settlement-" + UUID.randomUUID().toString(),
+                merchantId,
+                targetDate,
+                payoutDate,
+                Money.ZERO,
+                Money.ZERO,
+                Money.ZERO,
+                Status.FAILED,
+                settlementCycle,
+                retryCount
+        );
+    }
+
+    public void incrementRetryCount() {
+        this.retryCount++;
     }
 }

@@ -1,6 +1,7 @@
 package com.hyuk.settlement.infrastructure.merchant;
 
 import com.hyuk.settlement.merchant.Merchant;
+import com.hyuk.settlement.merchant.MerchantStatus;
 import com.hyuk.settlement.shared.BankAccount;
 import com.hyuk.settlement.shared.SettlementCycle;
 import jakarta.persistence.*;
@@ -24,6 +25,8 @@ public class MerchantEntity {
     private String accountHolder;
     @Enumerated(EnumType.STRING)
     private SettlementCycle settlementCycle;
+    @Enumerated(EnumType.STRING)
+    private MerchantStatus merchantStatus;
 
     public static MerchantEntity from(Merchant merchant) {
         MerchantEntity merchantEntity = new MerchantEntity();
@@ -34,6 +37,7 @@ public class MerchantEntity {
         merchantEntity.businessNumber = merchant.getBusinessNumber();
         merchantEntity.name = merchant.getName();
         merchantEntity.settlementCycle = merchant.getSettlementCycle();
+        merchantEntity.merchantStatus = merchant.getMerchantStatus();
 
         return merchantEntity;
     }
@@ -44,7 +48,8 @@ public class MerchantEntity {
                 businessNumber,
                 name,
                 new BankAccount(bankName, accountNumber, accountHolder),
-                settlementCycle
+                settlementCycle,
+                merchantStatus
         );
     }
 }

@@ -28,12 +28,17 @@ public class SettlementRepositoryImpl implements SettlementRepository {
     }
 
     @Override
-    public Optional<Settlement> findByMerchantIdAndTargetDate(String merchantId, LocalDate targetDate) {
-        return settlementJpaRepository.findByMerchantIdAndTargetDate(merchantId, targetDate).map(SettlementEntity::toDomain);
+    public List<Settlement> findByStatus(Status status) {
+        return settlementJpaRepository.findByStatus(status).stream().map(SettlementEntity::toDomain).toList();
     }
 
     @Override
-    public List<Settlement> findByStatus(Status status) {
-        return settlementJpaRepository.findByStatus(status).stream().map(SettlementEntity::toDomain).toList();
+    public List<Settlement> findByMerchantIdAndStatus(String merchantId, Status status) {
+        return settlementJpaRepository.findByMerchantIdAndStatus(merchantId, status).stream().map(SettlementEntity::toDomain).toList();
+    }
+
+    @Override
+    public boolean existsByMerchantIdAndStatusAndTargetDate(String merchantId, Status status, LocalDate targetDate) {
+        return settlementJpaRepository.existsByMerchantIdAndStatusAndTargetDate(merchantId, status, targetDate);
     }
 }

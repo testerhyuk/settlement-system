@@ -1,5 +1,6 @@
 package com.hyuk.settlement.api.merchant;
 
+import com.hyuk.settlement.shared.BankAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,5 +24,12 @@ public class MerchantController {
         MerchantResponse response = merchantService.findById(merchantId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PutMapping("/update/account")
+    public ResponseEntity<Void> changeBankAccount(@RequestBody ChangeBankAccountRequest request) {
+        merchantService.changeBankAccount(request);
+
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

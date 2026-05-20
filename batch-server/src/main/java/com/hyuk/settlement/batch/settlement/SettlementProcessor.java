@@ -19,11 +19,16 @@ import com.hyuk.settlement.shared.SettlementCycle;
 import com.hyuk.settlement.shared.SettlementDateCalculator;
 import com.hyuk.settlement.transaction.Transaction;
 import com.hyuk.settlement.transaction.TransactionRepository;
+import com.hyuk.settlement.transaction.TransactionType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -37,22 +42,15 @@ public class SettlementProcessor {
     private final MerchantRepository merchantRepository;
 
     @Transactional
+    @Retryable(maxAttempts = 3)
     public void processEachSettlement(String merchantId, LocalDate targetDate) {
         List<Transaction> transactions = transactionRepository.findByMerchantIdAndSettlementDate(merchantId, targetDate);
 
-        Money grossAmount = Money.ZERO;
-        Money totalFee = Money.ZERO;
+        TransactionAmounts amounts = calculateAmounts(transactions, merchantId, targetDate);
 
-        for (Transaction transaction : transactions) {
-            FeePolicy feePolicy = feePolicyRepository.findActivePolicy(merchantId, transaction.getCardCompany(), targetDate)
-                    .orElseThrow(() -> new RuntimeException("수수료 정책을 찾을 수 없습니다"));
+        Money netAmount = amounts.grossAmount.minus(amounts.totalFee);
 
-            Money fee = transaction.getAmount().times(feePolicy.getFeeRate(), transaction.getAmount().getCurrency());
-            grossAmount = grossAmount.plus(transaction.getAmount());
-            totalFee = totalFee.plus(fee);
-        }
-
-        Money netAmount = grossAmount.minus(totalFee);
+        netAmount = applyNegativeSettlements(merchantId, netAmount);
 
         Merchant merchant = merchantRepository.findById(merchantId).orElseThrow(() -> new IllegalArgumentException("가맹점을 찾을 수 없습니다"));
         SettlementCycle settlementCycle = merchant.getSettlementCycle();
@@ -63,18 +61,101 @@ public class SettlementProcessor {
                 merchantId,
                 targetDate,
                 payoutDate,
-                grossAmount,
-                totalFee,
+                amounts.grossAmount,
+                amounts.totalFee,
                 netAmount,
                 settlementCycle
         );
 
         settlementRepository.save(settlement);
 
-        List<JournalLine> lines = List.of(
-                JournalLine.create(AccountConstants.SETTLEMENT_PENDING, Direction.DEBIT, netAmount),
-                JournalLine.create("account-payable-" + merchantId, Direction.CREDIT, netAmount)
-        );
+        saveSettlementJournalEntry(settlement, merchantId, netAmount);
+    }
+
+    @Recover
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recoverSettlement(Exception e, String merchantId, LocalDate targetDate) {
+        boolean exists = settlementRepository.existsByMerchantIdAndStatusAndTargetDate(
+                merchantId, Status.FAILED, targetDate);
+
+        if (!exists) {
+            LocalDate payoutDate = settlementDateCalculator.calculatePayoutDate(targetDate);
+            Merchant merchant = merchantRepository.findById(merchantId)
+                    .orElseThrow(() -> new IllegalArgumentException("가맹점을 찾을 수 없습니다"));
+
+            Settlement settlement = Settlement.createFailed(merchantId, targetDate, payoutDate, merchant.getSettlementCycle(), 0);
+            settlementRepository.save(settlement);
+        }
+    }
+
+    // 1. 거래 집계
+    private record TransactionAmounts(Money grossAmount, Money totalFee) {}
+
+    private TransactionAmounts calculateAmounts(List<Transaction> transactions, String merchantId, LocalDate targetDate) {
+        Money grossAmount = Money.ZERO;
+        Money totalFee = Money.ZERO;
+
+        for (Transaction transaction : transactions) {
+            FeePolicy feePolicy = feePolicyRepository.findActivePolicy(merchantId, transaction.getCardCompany(), targetDate)
+                    .orElseThrow(() -> new RuntimeException("수수료 정책을 찾을 수 없습니다"));
+
+            Money fee = transaction.getAmount().times(feePolicy.getFeeRate(), transaction.getAmount().getCurrency());
+
+            if (transaction.getTransactionType() == TransactionType.PAYMENT) {
+                grossAmount = grossAmount.plus(transaction.getAmount());
+                totalFee = totalFee.plus(fee);
+            } else if (transaction.getTransactionType() == TransactionType.CANCEL || transaction.getTransactionType() == TransactionType.PARTIAL_REFUND) {
+                grossAmount = grossAmount.minus(transaction.getAmount());
+                totalFee = totalFee.minus(fee);
+            }
+        }
+
+        return new TransactionAmounts(grossAmount, totalFee);
+    }
+
+    // 2. 마이너스 정산 차감
+    private Money applyNegativeSettlements(String merchantId, Money netAmount) {
+        List<Settlement> negativeSettlements = settlementRepository.findByMerchantIdAndStatus(merchantId, Status.NEGATIVE_SETTLEMENT);
+
+        for (Settlement negative : negativeSettlements) {
+            netAmount = netAmount.plus(negative.getNetAmount());
+            negative.updateStatus(Status.RECOVERED);
+            settlementRepository.save(negative);
+
+            List<JournalLine> negativeLines = List.of(
+                    JournalLine.create("account-payable-" + merchantId, Direction.DEBIT, negative.getNetAmount().negate()),
+                    JournalLine.create(AccountConstants.SETTLEMENT_PENDING, Direction.CREDIT, negative.getNetAmount().negate())
+            );
+
+            JournalEntry negativeEntry = JournalEntry.create(
+                    EntryType.NEGATIVE_SETTLEMENT_DEDUCTION,
+                    negative.getSettlementId(),
+                    "마이너스 정산 차감 " + merchantId,
+                    negativeLines
+            );
+
+            journalEntryRepository.save(negativeEntry);
+        }
+
+        return netAmount;
+    }
+
+    // 3. 분개 기록
+    private void saveSettlementJournalEntry(Settlement settlement, String merchantId, Money netAmount) {
+        Money absAmount = netAmount.isNegative() ? netAmount.negate() : netAmount;
+
+        List<JournalLine> lines;
+        if (netAmount.isNegative()) {
+            lines = List.of(
+                    JournalLine.create("account-payable-" + merchantId, Direction.DEBIT, absAmount),
+                    JournalLine.create(AccountConstants.SETTLEMENT_PENDING, Direction.CREDIT, absAmount)
+            );
+        } else {
+            lines = List.of(
+                    JournalLine.create(AccountConstants.SETTLEMENT_PENDING, Direction.DEBIT, absAmount),
+                    JournalLine.create("account-payable-" + merchantId, Direction.CREDIT, absAmount)
+            );
+        }
 
         JournalEntry journalEntry = JournalEntry.create(
                 EntryType.SETTLEMENT,

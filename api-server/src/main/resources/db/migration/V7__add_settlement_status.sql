@@ -1,0 +1,3 @@
+ALTER TABLE settlement DROP CONSTRAINT settlement_status_check;
+ALTER TABLE settlement ADD CONSTRAINT settlement_status_check
+CHECK (status IN ('PENDING', 'CALCULATED', 'PAID', 'FAILED', 'NEGATIVE_SETTLEMENT', 'RECOVERY_REQUIRED', 'RECOVERED', 'RETRY_EXHAUSTED'));

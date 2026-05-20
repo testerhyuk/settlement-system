@@ -44,4 +44,8 @@ public class Money {
     public static Money of(long amount) {
         return new Money(BigDecimal.valueOf(amount), Currency.KRW);
     }
+
+    public Money negate() {
+        return new Money(this.amount.negate(), this.currency);
+    }
 }
