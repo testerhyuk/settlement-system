@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
-public interface FeePolicyJapRepository extends JpaRepository<FeePolicyEntity, String> {
+public interface FeePolicyJpaRepository extends JpaRepository<FeePolicyEntity, String> {
     @Query("SELECT f FROM FeePolicyEntity f WHERE f.merchantId = :merchantId AND f.cardCompany = :cardCompany AND f.effectiveFrom <= :date AND f.effectiveTo >= :date")
     Optional<FeePolicyEntity> findActivePolicy(
             @Param("merchantId") String merchantId,

@@ -12,22 +12,22 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 public class FeePolicyRepositoryImpl implements FeePolicyRepository {
-    private final FeePolicyJapRepository feePolicyJapRepository;
+    private final FeePolicyJpaRepository feePolicyJpaRepository;
 
     @Override
     public FeePolicy save(FeePolicy feePolicy) {
         FeePolicyEntity feePolicyEntity = FeePolicyEntity.from(feePolicy);
-        feePolicyJapRepository.save(feePolicyEntity);
+        feePolicyJpaRepository.save(feePolicyEntity);
         return feePolicyEntity.toDomain();
     }
 
     @Override
     public Optional<FeePolicy> findById(String id) {
-        return feePolicyJapRepository.findById(id).map(FeePolicyEntity::toDomain);
+        return feePolicyJpaRepository.findById(id).map(FeePolicyEntity::toDomain);
     }
 
     @Override
     public Optional<FeePolicy> findActivePolicy(String merchantId, CardCompany cardCompany, LocalDate date) {
-        return feePolicyJapRepository.findActivePolicy(merchantId, cardCompany, date).map(FeePolicyEntity::toDomain);
+        return feePolicyJpaRepository.findActivePolicy(merchantId, cardCompany, date).map(FeePolicyEntity::toDomain);
     }
 }
