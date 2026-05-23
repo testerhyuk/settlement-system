@@ -1,0 +1,22 @@
+server:
+  port: 8083
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/settlement-system
+    username: hyuk
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:29092,localhost:39092
+    streams:
+      application-id: ad-click-streams
+      default-key-serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+      default-value-serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+      properties:
+        num.stream.threads: 3
+        auto.offset.reset: earliest
+        state.dir: /tmp/kafka-streams/ad-click-streams

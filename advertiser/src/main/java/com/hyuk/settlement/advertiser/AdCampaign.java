@@ -69,4 +69,9 @@ public class AdCampaign {
             this.status = AdCampaignStatus.ACTIVE;
         }
     }
+
+    public void exhaustBudget() {
+        this.budget = Money.ZERO;
+        this.status = AdCampaignStatus.BUDGET_EXHAUSTED;
+    }
 }

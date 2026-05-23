@@ -31,14 +31,26 @@ spec:
     version: 4.1.0
     metadataVersion: 4.1-IV0
     listeners:
-      - name: plain
-        port: 9092
-        type: internal
-        tls: false
       - name: external
         port: 9094
         type: loadbalancer
         tls: false
+        configuration:
+          bootstrap:
+            loadBalancerIP: 127.0.0.1
+          brokers:
+            - broker: 0
+              advertisedHost: 127.0.0.1
+              advertisedPort: 31336
+              loadBalancerIP: 127.0.0.1
+            - broker: 1
+              advertisedHost: 127.0.0.1
+              advertisedPort: 30851
+              loadBalancerIP: 127.0.0.1
+            - broker: 2
+              advertisedHost: 127.0.0.1
+              advertisedPort: 30915
+              loadBalancerIP: 127.0.0.1
   entityOperator:
     topicOperator: {}
     userOperator: {}

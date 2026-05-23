@@ -1,13 +1,16 @@
 package com.hyuk.settlement.api.advertiser;
 
 import com.hyuk.settlement.advertiser.*;
+import com.hyuk.settlement.shared.AdClickEvent;
 import com.hyuk.settlement.shared.Money;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -16,6 +19,8 @@ import java.util.List;
 public class AdvertiserService {
     private final AdvertiserRepository advertiserRepository;
     private final AdCampaignRepository adCampaignRepository;
+    private final AdClickProducer adClickProducer;
+    private final BudgetQueryClient budgetQueryClient;
 
     @Transactional
     public AdvertiserResponse registerAdvertiser(String brand) {
@@ -74,9 +79,13 @@ public class AdvertiserService {
                     throw new IllegalStateException("캠페인 상태가 " + found.getStatus() + "입니다");
                 });
 
-        campaign.deductBudget(campaign.getCpcAmount());
+        AdClickEvent adClickEvent = AdClickEvent.builder()
+                .campaignId(campaignId)
+                .cpcAmount(campaign.getCpcAmount())
+                .clickedAt(LocalDateTime.now())
+                .build();
 
-        adCampaignRepository.save(campaign);
+        adClickProducer.send(adClickEvent);
     }
 
     @Transactional
@@ -93,14 +102,22 @@ public class AdvertiserService {
         List<AdCampaign> campaigns = adCampaignRepository.findAllByAdvertiserId(advertiserId);
 
         List<AdvertiserAndCampaignResponse.AdCampaignInfo> campaignInfoList = campaigns.stream()
-                .map(campaign -> AdvertiserAndCampaignResponse.AdCampaignInfo.builder()
-                        .campaignId(campaign.getCampaignId())
-                        .cpcAmount(campaign.getCpcAmount())
-                        .budget(campaign.getBudget())
-                        .startDate(campaign.getStartDate())
-                        .endDate(campaign.getEndDate())
-                        .status(campaign.getStatus())
-                        .build())
+                .map(campaign -> {
+                    BigDecimal remainingBudget = budgetQueryClient.getRemainingBudget(campaign.getCampaignId());
+
+                    Money budget = remainingBudget != null
+                            ? new Money(remainingBudget, campaign.getBudget().getCurrency())
+                            : campaign.getBudget();
+
+                    return AdvertiserAndCampaignResponse.AdCampaignInfo.builder()
+                            .campaignId(campaign.getCampaignId())
+                            .cpcAmount(campaign.getCpcAmount())
+                            .budget(budget)
+                            .startDate(campaign.getStartDate())
+                            .endDate(campaign.getEndDate())
+                            .status(campaign.getStatus())
+                            .build();
+                })
                 .toList();
 
         return AdvertiserAndCampaignResponse.builder()
@@ -116,11 +133,16 @@ public class AdvertiserService {
                 () -> new IllegalArgumentException("해당 캠페인이 없습니다")
         );
 
+        BigDecimal remainingBudget = budgetQueryClient.getRemainingBudget(campaignId);
+        Money budget = remainingBudget != null
+                ? new Money(remainingBudget, campaign.getBudget().getCurrency())
+                : campaign.getBudget();
+
         return AdCampaignResponse.builder()
                 .campaignId(campaign.getCampaignId())
                 .advertiserId(campaign.getAdvertiserId())
                 .cpcAmount(campaign.getCpcAmount())
-                .budget(campaign.getBudget())
+                .budget(budget)
                 .startDate(campaign.getStartDate())
                 .endDate(campaign.getEndDate())
                 .status(campaign.getStatus())
