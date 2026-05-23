@@ -9,4 +9,10 @@ include ':fee-policy'
 include ':ledger'
 include ':settlement'
 include ':payout'
+<<<<<<< Updated upstream
 include ':infrastructure'
+=======
+include ':infrastructure'
+include ':advertiser'
+include ':ad-streams'
+>>>>>>> Stashed changes

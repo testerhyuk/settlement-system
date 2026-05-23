@@ -16,3 +16,8 @@ spring:
     redis:
       host: localhost
       port: 6380
+  kafka:
+    bootstrap-servers: localhost:19092,localhost:29092,localhost:39092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

@@ -17,4 +17,6 @@ dependencies {
     implementation 'org.flywaydb:flyway-core:10.10.0'
     implementation 'org.flywaydb:flyway-database-postgresql:10.10.0'
     runtimeOnly 'com.h2database:h2'
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 }
