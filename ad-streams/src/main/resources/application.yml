@@ -20,3 +20,14 @@ spring:
         num.stream.threads: 3
         auto.offset.reset: earliest
         state.dir: /tmp/kafka-streams/ad-click-streams
+        commit.interval.ms: 1000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true

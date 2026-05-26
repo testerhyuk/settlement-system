@@ -1,12 +1,15 @@
 package com.hyuk.settlement.advertiser;
 
 import com.hyuk.settlement.shared.Money;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AdCampaign {
     private String campaignId;
     private String advertiserId;
@@ -73,5 +76,11 @@ public class AdCampaign {
     public void exhaustBudget() {
         this.budget = Money.ZERO;
         this.status = AdCampaignStatus.BUDGET_EXHAUSTED;
+    }
+
+    public boolean isActiveOn(LocalDate date) {
+        return this.status == AdCampaignStatus.ACTIVE
+                && !date.isBefore(this.startDate)
+                && !date.isAfter(this.endDate);
     }
 }

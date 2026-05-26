@@ -3,11 +3,19 @@ package com.hyuk.settlement.batch;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(scanBasePackages = {"com.hyuk.settlement"})
+@SpringBootApplication(
+        scanBasePackages = {
+                "com.hyuk.settlement.batch",
+                "com.hyuk.settlement.infrastructure",
+                "com.hyuk.settlement"
+        },
+        exclude = { KafkaAutoConfiguration.class }
+)
 @EnableJpaRepositories(basePackages = {"com.hyuk.settlement"})
 @EntityScan(basePackages = {"com.hyuk.settlement"})
 @EnableScheduling

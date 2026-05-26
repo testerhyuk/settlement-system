@@ -12,12 +12,16 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
-  data:
-    redis:
-      host: localhost
-      port: 6380
   kafka:
     bootstrap-servers: localhost:19092,localhost:29092,localhost:39092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+
+feign:
+  ad-streams:
+    url: http://localhost:8083

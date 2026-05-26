@@ -1,7 +1,8 @@
 package com.hyuk.settlement.api.advertiser;
 
 import com.hyuk.settlement.advertiser.*;
-import com.hyuk.settlement.shared.AdClickEvent;
+import com.hyuk.settlement.infrastructure.cache.CampaignCacheService;
+import com.hyuk.settlement.shared.BudgetEvent;
 import com.hyuk.settlement.shared.Money;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,8 +20,9 @@ import java.util.List;
 public class AdvertiserService {
     private final AdvertiserRepository advertiserRepository;
     private final AdCampaignRepository adCampaignRepository;
-    private final AdClickProducer adClickProducer;
     private final BudgetQueryClient budgetQueryClient;
+    private final BudgetEventProducer budgetEventProducer;
+    private final CampaignCacheService campaignCacheService;
 
     @Transactional
     public AdvertiserResponse registerAdvertiser(String brand) {
@@ -32,16 +34,6 @@ public class AdvertiserService {
                 .advertiserId(advertiser.getAdvertiserId())
                 .brand(advertiser.getBrand())
                 .build();
-    }
-
-    @Transactional
-    public void chargeBudget(ChargeBudgetRequest request) {
-        AdCampaign adCampaign = adCampaignRepository.findByAdvertiserIdAndCampaignId(request.getAdvertiserId(), request.getCampaignId())
-                        .orElseThrow(() -> new IllegalArgumentException("광고주 혹은 캠페인이 없습니다"));
-
-        adCampaign.chargeBudget(new Money(request.getBudget(), request.getCurrency()));
-
-        adCampaignRepository.save(adCampaign);
     }
 
     @Transactional
@@ -57,6 +49,17 @@ public class AdvertiserService {
         );
 
         adCampaignRepository.save(campaign);
+        campaignCacheService.save(campaign);
+
+        // 초기 예산 CHARGE 이벤트 발행
+        BudgetEvent event = BudgetEvent.builder()
+                .campaignId(campaign.getCampaignId())
+                .amount(request.getBudget())
+                .currency(request.getCurrency())
+                .type(BudgetEvent.BudgetEventType.CHARGE)
+                .build();
+
+        budgetEventProducer.send(event);
 
         return AdCampaignResponse.builder()
                 .campaignId(campaign.getCampaignId())
@@ -69,23 +72,27 @@ public class AdvertiserService {
                 .build();
     }
 
-    @Transactional
     public void processAdClick(String campaignId) {
-        AdCampaign campaign = adCampaignRepository.findActiveCampaign(campaignId, LocalDate.now())
+        AdCampaign campaign = campaignCacheService.findById(campaignId)
                 .orElseGet(() -> {
-                    AdCampaign found = adCampaignRepository.findById(campaignId)
+                    AdCampaign fromDb = adCampaignRepository.findById(campaignId)
                             .orElseThrow(() -> new IllegalArgumentException("캠페인이 존재하지 않습니다"));
-
-                    throw new IllegalStateException("캠페인 상태가 " + found.getStatus() + "입니다");
+                    campaignCacheService.save(fromDb);
+                    return fromDb;
                 });
 
-        AdClickEvent adClickEvent = AdClickEvent.builder()
+        if (!campaign.isActiveOn(LocalDate.now())) {
+            throw new IllegalStateException("캠페인 상태가 " + campaign.getStatus() + "입니다");
+        }
+
+        BudgetEvent event = BudgetEvent.builder()
                 .campaignId(campaignId)
-                .cpcAmount(campaign.getCpcAmount())
-                .clickedAt(LocalDateTime.now())
+                .amount(campaign.getCpcAmount().getAmount())
+                .currency(campaign.getCpcAmount().getCurrency())
+                .type(BudgetEvent.BudgetEventType.DEDUCT)
                 .build();
 
-        adClickProducer.send(adClickEvent);
+        budgetEventProducer.send(event);
     }
 
     @Transactional
@@ -158,6 +165,7 @@ public class AdvertiserService {
         if (campaign.getStatus() == AdCampaignStatus.ACTIVE) {
             campaign.changeStatus(AdCampaignStatus.PAUSED);
             adCampaignRepository.save(campaign);
+            campaignCacheService.evict(campaignId);
         }
     }
 
@@ -170,6 +178,22 @@ public class AdvertiserService {
         if (campaign.getStatus() == AdCampaignStatus.PAUSED) {
             campaign.changeStatus(AdCampaignStatus.ACTIVE);
             adCampaignRepository.save(campaign);
+            campaignCacheService.evict(campaignId);
         }
+    }
+
+    @Transactional
+    public void chargeBudget(ChargeBudgetRequest request) {
+        AdCampaign adCampaign = adCampaignRepository.findByAdvertiserIdAndCampaignId(request.getAdvertiserId(), request.getCampaignId())
+                .orElseThrow(() -> new IllegalArgumentException("광고주 혹은 캠페인이 없습니다"));
+
+        BudgetEvent event = BudgetEvent.builder()
+                .campaignId(request.getCampaignId())
+                .amount(request.getBudget())
+                .currency(request.getCurrency())
+                .type(BudgetEvent.BudgetEventType.CHARGE)
+                .build();
+
+        budgetEventProducer.send(event);
     }
 }

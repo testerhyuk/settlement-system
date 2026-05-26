@@ -25,6 +25,10 @@ public class BudgetQueryService {
                 )
         );
 
-        return store.get(campaignId);
+        BigDecimal budget = store.get(campaignId);
+
+        if (budget == null) return null;
+
+        return budget.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : budget;
     }
 }
