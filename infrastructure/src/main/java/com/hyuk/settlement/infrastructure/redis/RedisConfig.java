@@ -20,7 +20,7 @@ public class RedisConfig {
     public RedisConnectionFactory lockRedisConnectionFactory() {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName("redis-lock");
-        config.setPort(6380);
+        config.setPort(6379);
         return new LettuceConnectionFactory(config);
     }
 

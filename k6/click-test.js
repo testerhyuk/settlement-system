@@ -2,22 +2,23 @@ import http from 'k6/http';
 import { check } from 'k6';
 
 const campaignIds = [
-//    'campaign-f5e04fcf-45af-47f8-9dfa-fdc81ea318a7',
-    'campaign-f3110fc2-e811-4114-8f8c-c2b21f6664a0',
-//    'campaign-6763b0b4-bcdd-4234-a0d1-494da4587ef6',
-//    'campaign-34f57846-9cb9-4d19-9efb-4fead05452b7',
-//    'campaign-c4e969ab-35ce-4e9a-a340-5644ea7a21ac',
+    'campaign-5aa646ab-8c8f-4db4-aa85-7a7a5885fcc7',
+//    'campaign-81f918ae-ee11-4729-8f1e-ea40371ecdb2',
+//    'campaign-8d5dbe36-5e4c-4487-8036-f0997b5a062e',
+//    'campaign-8b3078a7-39d9-4886-8b14-5adfe1304804',
+//    'campaign-b9653fe0-2da1-4cf2-a6bc-643294d2e8e6',
+//    'campaign-fd71e273-fc63-4967-b967-1ccb8876d78f',
 ];
 
 export const options = {
     scenarios: {
         constant_request_rate: {
             executor: 'constant-arrival-rate',
-            rate: 100,
+            rate: 50,
             timeUnit: '1s',
             duration: '1m',
             preAllocatedVUs: 20,
-            maxVUs: 50,
+            maxVUs: 200,
         },
     },
 };

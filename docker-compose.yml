@@ -8,12 +8,17 @@ services:
       - POSTGRES_DB=settlement-system
       - POSTGRES_USER=hyuk
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   kafka-1:
     image: apache/kafka:3.7.0
     container_name: kafka-1
+    user: "1000:1000"
     ports:
       - "19092:19092"
     environment:
@@ -28,11 +33,15 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       CLUSTER_ID: settlement-kafka-cluster
+    volumes:
+      - kafka1_data:/var/lib/kafka/data
 
   kafka-2:
     image: apache/kafka:3.7.0
     container_name: kafka-2
+    user: "1000:1000"
     ports:
       - "29092:29092"
     environment:
@@ -47,11 +56,15 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       CLUSTER_ID: settlement-kafka-cluster
+    volumes:
+      - kafka2_data:/var/lib/kafka/data
 
   kafka-3:
     image: apache/kafka:3.7.0
     container_name: kafka-3
+    user: "1000:1000"
     ports:
       - "39092:39092"
     environment:
@@ -66,7 +79,10 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       CLUSTER_ID: settlement-kafka-cluster
+    volumes:
+      - kafka3_data:/var/lib/kafka/data
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -102,6 +118,7 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     depends_on:
       - kafka-exporter
 
@@ -114,6 +131,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
 
   api-server:
     build:
@@ -129,12 +148,17 @@ services:
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
       - FEIGN_AD-STREAMS_URL=http://ad-streams:8083
+      - SPRING_KAFKA_CLUSTERS_PRIMARY_BOOTSTRAP-SERVERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      - SPRING_KAFKA_CLUSTERS_DR_BOOTSTRAP-SERVERS=kafka-dr-1:9092,kafka-dr-2:9092,kafka-dr-3:9092
     depends_on:
       - postgresql
       - kafka-1
       - kafka-2
       - kafka-3
       - ad-streams
+    networks:
+      default:
+        ipv4_address: 172.18.0.101
 
   nginx:
     image: nginx:latest
@@ -145,6 +169,9 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - api-server
+    networks:
+      default:
+        ipv4_address: 172.18.0.100
 
   ad-streams:
     build:
@@ -163,6 +190,9 @@ services:
       - kafka-1
       - kafka-2
       - kafka-3
+    networks:
+      default:
+        ipv4_address: 172.18.0.102
 
   k6:
     image: grafana/k6:latest
@@ -246,5 +276,108 @@ services:
       - redis-cache-master
       - redis-cache-replica
 
+  kafka-dr-1:
+    image: apache/kafka:3.7.0
+    container_name: kafka-dr-1
+    user: "1000:1000"
+    ports:
+      - "49092:49092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:49092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-dr-1:9092,EXTERNAL://localhost:49092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-dr-1:9093,2@kafka-dr-2:9093,3@kafka-dr-3:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: settlement-kafka-cluster-dr
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes:
+      - kafka_dr_1_data:/var/lib/kafka/data
+
+  kafka-dr-2:
+    image: apache/kafka:3.7.0
+    container_name: kafka-dr-2
+    user: "1000:1000"
+    ports:
+      - "49093:49093"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:49093,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-dr-2:9092,EXTERNAL://localhost:49093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-dr-1:9093,2@kafka-dr-2:9093,3@kafka-dr-3:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: settlement-kafka-cluster-dr
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes:
+      - kafka_dr_2_data:/var/lib/kafka/data
+
+  kafka-dr-3:
+    image: apache/kafka:3.7.0
+    container_name: kafka-dr-3
+    user: "1000:1000"
+    ports:
+      - "49094:49094"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:49094,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-dr-3:9092,EXTERNAL://localhost:49094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-dr-1:9093,2@kafka-dr-2:9093,3@kafka-dr-3:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: settlement-kafka-cluster-dr
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes:
+      - kafka_dr_3_data:/var/lib/kafka/data
+
+  mirror-maker:
+    image: apache/kafka:3.7.0
+    container_name: mirror-maker
+    user: "1000:1000"
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+      - kafka-dr-1
+      - kafka-dr-2
+      - kafka-dr-3
+    volumes:
+      - ./mirror-maker/mm2.properties:/opt/kafka/config/mm2.properties
+    command: >
+      /opt/kafka/bin/connect-mirror-maker.sh /opt/kafka/config/mm2.properties
+
 volumes:
   postgres_data:
+  kafka1_data:
+  kafka2_data:
+  kafka3_data:
+  grafana_data:
+  prometheus_data:
+  kafka_dr_1_data:
+  kafka_dr_2_data:
+  kafka_dr_3_data:
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16

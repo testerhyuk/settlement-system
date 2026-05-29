@@ -23,6 +23,7 @@ import org.springframework.kafka.config.KafkaStreamsConfiguration;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -32,6 +33,7 @@ public class AdClickStreamConfig {
 
     private static final String TOPIC = "budget-events";
     private static final String STORE_NAME = "campaign-budget-store";
+    private static final String DR_TOPIC = "dr.budget-events";
 
     private final ObjectMapper objectMapper;
 
@@ -62,7 +64,7 @@ public class AdClickStreamConfig {
                 );
         builder.addStateStore(storeBuilder);
 
-        KStream<String, String> stream = builder.stream(TOPIC);
+        KStream<String, String> stream = builder.stream(List.of(TOPIC, DR_TOPIC));
 
         stream.process(() -> new Processor<String, String, Void, Void>() {
 

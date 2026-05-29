@@ -1,0 +1,8 @@
+services:
+  api-server:
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-dr-1:9092,kafka-dr-2:9092,kafka-dr-3:9092
+
+  ad-streams:
+    environment:
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-dr-1:9092,kafka-dr-2:9092,kafka-dr-3:9092

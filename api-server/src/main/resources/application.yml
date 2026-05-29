@@ -21,6 +21,11 @@ spring:
       retries: 3
       properties:
         enable.idempotence: true
+    clusters:
+      primary:
+        bootstrap-servers: localhost:19092,localhost:29092,localhost:39092
+      dr:
+        bootstrap-servers: localhost:49092,localhost:49093,localhost:49094
 
 feign:
   ad-streams:

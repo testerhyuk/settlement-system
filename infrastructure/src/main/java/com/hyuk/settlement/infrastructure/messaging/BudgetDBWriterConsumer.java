@@ -22,8 +22,9 @@ public class BudgetDBWriterConsumer {
 
     @Transactional
     @KafkaListener(
-            topics = "budget-events",
-            groupId = "budget-db-writer"
+            topics = {"budget-events", "dr.budget-events"},
+            groupId = "budget-db-writer",
+            concurrency = "6"
     )
     public void handle(String message) {
         try {

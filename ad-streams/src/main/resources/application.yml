@@ -6,6 +6,11 @@ spring:
     url: jdbc:postgresql://localhost:5433/settlement-system
     username: hyuk
     password: ${POSTGRES_PASSWORD}
+    hikari:
+      connection-timeout: 1000
+      validation-timeout: 500
+      maximum-pool-size: 10
+      minimum-idle: 5
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -21,6 +26,12 @@ spring:
         auto.offset.reset: earliest
         state.dir: /tmp/kafka-streams/ad-click-streams
         commit.interval.ms: 1000
+        processing.guarantee: exactly_once_v2
+    clusters:
+      primary:
+        bootstrap-servers: localhost:19092,localhost:29092,localhost:39092
+      dr:
+        bootstrap-servers: localhost:49092,localhost:49093,localhost:49094
 
 management:
   endpoints:

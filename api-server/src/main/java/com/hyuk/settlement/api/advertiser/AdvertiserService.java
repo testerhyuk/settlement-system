@@ -44,7 +44,7 @@ public class AdvertiserService {
         AdCampaign campaign = AdCampaign.create(
                 advertiser.getAdvertiserId(),
                 new Money(request.getCpcAmount(), request.getCurrency()),
-                new Money(request.getBudget(), request.getCurrency()),
+                new Money(BigDecimal.ZERO, request.getCurrency()),
                 request.getEndDate()
         );
 
@@ -65,7 +65,7 @@ public class AdvertiserService {
                 .campaignId(campaign.getCampaignId())
                 .advertiserId(campaign.getAdvertiserId())
                 .cpcAmount(campaign.getCpcAmount())
-                .budget(campaign.getBudget())
+                .budget(new Money(request.getBudget(), request.getCurrency()))
                 .startDate(campaign.getStartDate())
                 .endDate(campaign.getEndDate())
                 .status(campaign.getStatus())
