@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -57,20 +58,21 @@ public class AdCampaign {
         this.status = newStatus;
     }
 
-    public void deductBudget(Money cpcAmount) {
-        this.budget = this.budget.minus(cpcAmount);
-
-        if (this.budget.isZero() || this.budget.isNegative()) {
-            this.status = AdCampaignStatus.BUDGET_EXHAUSTED;
+    public void updateBudget(Money amount) {
+        if (amount == null || amount.isNegative()) {
+            throw new IllegalArgumentException("값은 null이거나 음수일 수 없습니다");
         }
-    }
 
-    public void chargeBudget(Money amount) {
-        this.budget = this.budget.plus(amount);
+        if (!this.budget.getCurrency().equals(amount.getCurrency())) {
+            throw new IllegalArgumentException("통화가 서로 다릅니다");
+        }
 
-        if (this.status == AdCampaignStatus.BUDGET_EXHAUSTED) {
+        if (amount.isZero()) this.status = AdCampaignStatus.BUDGET_EXHAUSTED;
+        if (amount.getAmount().compareTo(BigDecimal.ZERO) > 0 && this.status.equals(AdCampaignStatus.BUDGET_EXHAUSTED)) {
             this.status = AdCampaignStatus.ACTIVE;
         }
+
+        this.budget = amount;
     }
 
     public void exhaustBudget() {

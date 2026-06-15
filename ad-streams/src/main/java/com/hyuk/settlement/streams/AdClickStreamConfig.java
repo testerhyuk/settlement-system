@@ -2,6 +2,7 @@ package com.hyuk.settlement.streams;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hyuk.settlement.shared.BudgetEvent;
+import com.hyuk.settlement.shared.BudgetResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serde;
@@ -34,6 +35,7 @@ public class AdClickStreamConfig {
     private static final String TOPIC = "budget-events";
     private static final String STORE_NAME = "campaign-budget-store";
     private static final String DR_TOPIC = "dr.budget-events";
+    private static final String RESULT_TOPIC = "budget-results";
 
     private final ObjectMapper objectMapper;
 
@@ -66,13 +68,15 @@ public class AdClickStreamConfig {
 
         KStream<String, String> stream = builder.stream(List.of(TOPIC, DR_TOPIC));
 
-        stream.process(() -> new Processor<String, String, Void, Void>() {
+        KStream<String, String> resultStream = stream.process(() -> new Processor<String, String, String, String>() {
 
             private KeyValueStore<String, BigDecimal> store;
+            private ProcessorContext<String, String> processorContext;
 
             @Override
-            public void init(ProcessorContext<Void, Void> context) {
+            public void init(ProcessorContext<String, String> context) {
                 store = context.getStateStore(STORE_NAME);
+                processorContext = context;
             }
 
             @Override
@@ -83,33 +87,90 @@ public class AdClickStreamConfig {
                     BigDecimal amount = event.getAmount();
                     BigDecimal currentBudget = store.get(campaignId);
 
-                    if (currentBudget == null) {
-                        currentBudget = BigDecimal.ZERO;
-                    }
-
                     if (event.getType() == BudgetEvent.BudgetEventType.CHARGE) {
+                        if (currentBudget == null) {
+                            currentBudget = BigDecimal.ZERO;
+                        }
+
                         BigDecimal newBudget = currentBudget.add(amount);
                         store.put(campaignId, newBudget);
 
                         log.info("예산 충전 - campaignId: {}, 충전액: {}, 잔여 예산: {}", campaignId, amount, newBudget);
 
-                    } else if (event.getType() == BudgetEvent.BudgetEventType.DEDUCT) {
-                        BigDecimal newBudget = currentBudget.subtract(amount);
-                        store.put(campaignId, newBudget);
-                        log.info("예산 차감 - campaignId: {}, 차감액: {}, 잔여 예산: {}", campaignId, amount, newBudget);
+                        BudgetResult result = BudgetResult.builder()
+                                .campaignId(campaignId)
+                                .eventId(event.getEventId())
+                                .requestAmount(amount)
+                                .remainingBudget(newBudget)
+                                .currency(event.getCurrency())
+                                .resultType(BudgetResult.BudgetResultType.CHARGED)
+                                .reason(null)
+                                .build();
 
-                        if (newBudget.compareTo(BigDecimal.ZERO) <= 0) {
-                            log.info("예산 소진 - campaignId: {}, 상태: BUDGET_EXHAUSTED", campaignId);
+                        String resultData = objectMapper.writeValueAsString(result);
+                        Record<String, String> resultRecord = new Record<>(campaignId, resultData, record.timestamp());
+                        processorContext.forward(resultRecord);
+                    } else if (event.getType() == BudgetEvent.BudgetEventType.DEDUCT) {
+                        BudgetResult.BudgetResultBuilder resultBuilder = BudgetResult.builder()
+                                .campaignId(campaignId)
+                                .eventId(event.getEventId())
+                                .requestAmount(amount)
+                                .currency(event.getCurrency());
+
+                        BudgetResult result;
+
+                        if (currentBudget == null) {
+                            log.error("null은 잘못된 값입니다. campaignId: {}, 잘못된 값: {}", campaignId, currentBudget);
+                            result = resultBuilder
+                                        .remainingBudget(currentBudget)
+                                        .resultType(BudgetResult.BudgetResultType.REJECTED)
+                                        .reason(BudgetResult.FailureReason.BUDGET_STATE_NOT_FOUND)
+                                        .build();
+                        } else if (currentBudget.compareTo(BigDecimal.ZERO) < 0) {
+                            log.error("현재 예산이 음수일 수 없습니다. campaignId: {}, 잘못된 값: {}", campaignId, currentBudget);
+                            result = resultBuilder
+                                    .remainingBudget(currentBudget)
+                                    .resultType(BudgetResult.BudgetResultType.REJECTED)
+                                    .reason(BudgetResult.FailureReason.INVALID_BUDGET_STATE)
+                                    .build();
+                        } else if (currentBudget.compareTo(amount) < 0) {
+                            log.warn("잔액 부족 - campaignId: {}, 현재 예산: {}", campaignId, currentBudget);
+                            result = resultBuilder
+                                        .remainingBudget(currentBudget)
+                                        .resultType(BudgetResult.BudgetResultType.REJECTED)
+                                        .reason(BudgetResult.FailureReason.INSUFFICIENT_BUDGET)
+                                        .build();
+                        } else {
+                            BigDecimal newBudget = currentBudget.subtract(amount);
+
+                            store.put(campaignId, newBudget);
+                            log.info("예산 차감 - campaignId: {}, 차감액: {}, 잔여 예산: {}", campaignId, amount, newBudget);
+
+                            if (newBudget.compareTo(BigDecimal.ZERO) == 0) {
+                                log.info("예산 소진 - campaignId: {}, 상태: BUDGET_EXHAUSTED", campaignId);
+                            }
+
+                            result = resultBuilder
+                                        .remainingBudget(newBudget)
+                                        .resultType(BudgetResult.BudgetResultType.DEDUCTED)
+                                        .reason(null)
+                                        .build();
                         }
+
+                        String resultData = objectMapper.writeValueAsString(result);
+                        Record<String, String> resultRecord = new Record<>(campaignId, resultData, record.timestamp());
+                        processorContext.forward(resultRecord);
                     }
 
                 } catch (Exception e) {
-                    log.error("이벤트 처리 실패 - {}", e.getMessage());
+                    throw new RuntimeException("예산 이벤트 처리 실패 : ", e);
                 }
             }
         }, STORE_NAME);
 
-        return stream;
+        resultStream.to(RESULT_TOPIC);
+
+        return resultStream;
     }
 
     // BigDecimal을 String으로 직렬화/역직렬화하는 커스텀 Serde
