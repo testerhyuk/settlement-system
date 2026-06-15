@@ -34,6 +34,7 @@ public class AdClickStreamConfig {
 
     private static final String TOPIC = "budget-events";
     private static final String STORE_NAME = "campaign-budget-store";
+    private static final String EVENT_STORE_NAME = "event-id-store";
     private static final String DR_TOPIC = "dr.budget-events";
     private static final String RESULT_TOPIC = "budget-results";
 
@@ -64,19 +65,30 @@ public class AdClickStreamConfig {
                         Serdes.String(),
                         bigDecimalSerde()
                 );
+
+        StoreBuilder<KeyValueStore<String, String>> eventIdStoreBuilder =
+                Stores.keyValueStoreBuilder(
+                        Stores.persistentKeyValueStore(EVENT_STORE_NAME),
+                        Serdes.String(),
+                        Serdes.String()
+                );
+
         builder.addStateStore(storeBuilder);
+        builder.addStateStore(eventIdStoreBuilder);
 
         KStream<String, String> stream = builder.stream(List.of(TOPIC, DR_TOPIC));
 
         KStream<String, String> resultStream = stream.process(() -> new Processor<String, String, String, String>() {
 
             private KeyValueStore<String, BigDecimal> store;
+            private KeyValueStore<String, String> eventIdStore;
             private ProcessorContext<String, String> processorContext;
 
             @Override
             public void init(ProcessorContext<String, String> context) {
                 store = context.getStateStore(STORE_NAME);
                 processorContext = context;
+                eventIdStore = context.getStateStore(EVENT_STORE_NAME);
             }
 
             @Override
@@ -86,6 +98,12 @@ public class AdClickStreamConfig {
                     String campaignId = event.getCampaignId();
                     BigDecimal amount = event.getAmount();
                     BigDecimal currentBudget = store.get(campaignId);
+                    String eventId = eventIdStore.get(event.getEventId());
+
+                    if (eventId != null) {
+                        log.debug("중복 예산 이벤트 스킵 - eventId: {}, campaignId: {}", event.getEventId(), campaignId);
+                        return;
+                    }
 
                     if (event.getType() == BudgetEvent.BudgetEventType.CHARGE) {
                         if (currentBudget == null) {
@@ -160,13 +178,14 @@ public class AdClickStreamConfig {
                         String resultData = objectMapper.writeValueAsString(result);
                         Record<String, String> resultRecord = new Record<>(campaignId, resultData, record.timestamp());
                         processorContext.forward(resultRecord);
+                        eventIdStore.put(event.getEventId(), "PROCESSED");
                     }
 
                 } catch (Exception e) {
                     throw new RuntimeException("예산 이벤트 처리 실패 : ", e);
                 }
             }
-        }, STORE_NAME);
+        }, STORE_NAME, EVENT_STORE_NAME);
 
         resultStream.to(RESULT_TOPIC);
 
