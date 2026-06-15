@@ -42,3 +42,10 @@ management:
     export:
       prometheus:
         enabled: true
+
+app:
+  kafka:
+    budget-events-topic: budget-events
+    remote-budget-events-topic: dr.budget-events
+    budget-results-topic: budget-results
+    remote-budget-results-topic: dr.budget-results

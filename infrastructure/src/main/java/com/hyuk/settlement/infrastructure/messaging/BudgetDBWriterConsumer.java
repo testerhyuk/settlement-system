@@ -22,7 +22,10 @@ public class BudgetDBWriterConsumer {
 
     @Transactional
     @KafkaListener(
-            topics = {"budget-results", "dr.budget-results"},
+            topics = {
+                    "${app.kafka.budget-results-topic}",
+                    "${app.kafka.remote-budget-results-topic}"
+            },
             groupId = "budget-db-writer",
             concurrency = "6"
     )

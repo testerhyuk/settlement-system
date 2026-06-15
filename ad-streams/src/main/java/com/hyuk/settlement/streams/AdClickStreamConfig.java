@@ -32,11 +32,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AdClickStreamConfig {
 
-    private static final String TOPIC = "budget-events";
     private static final String STORE_NAME = "campaign-budget-store";
     private static final String EVENT_STORE_NAME = "event-id-store";
-    private static final String DR_TOPIC = "dr.budget-events";
-    private static final String RESULT_TOPIC = "budget-results";
+
+    @Value("${app.kafka.budget-events-topic}")
+    private String BUDGET_EVENTS_TOPIC;
+    @Value("${app.kafka.budget-results-topic}")
+    private String BUDGET_RESULTS_TOPIC;
 
     private final ObjectMapper objectMapper;
 
@@ -76,7 +78,7 @@ public class AdClickStreamConfig {
         builder.addStateStore(storeBuilder);
         builder.addStateStore(eventIdStoreBuilder);
 
-        KStream<String, String> stream = builder.stream(List.of(TOPIC, DR_TOPIC));
+        KStream<String, String> stream = builder.stream(BUDGET_EVENTS_TOPIC);
 
         KStream<String, String> resultStream = stream.process(() -> new Processor<String, String, String, String>() {
 
@@ -178,16 +180,17 @@ public class AdClickStreamConfig {
                         String resultData = objectMapper.writeValueAsString(result);
                         Record<String, String> resultRecord = new Record<>(campaignId, resultData, record.timestamp());
                         processorContext.forward(resultRecord);
-                        eventIdStore.put(event.getEventId(), "PROCESSED");
                     }
 
+                    eventIdStore.put(event.getEventId(), "PROCESSED");
                 } catch (Exception e) {
                     throw new RuntimeException("예산 이벤트 처리 실패 : ", e);
                 }
             }
         }, STORE_NAME, EVENT_STORE_NAME);
 
-        resultStream.to(RESULT_TOPIC);
+
+        resultStream.to(BUDGET_RESULTS_TOPIC);
 
         return resultStream;
     }
