@@ -49,3 +49,5 @@ app:
     remote-budget-events-topic: dr.budget-events
     budget-results-topic: budget-results
     remote-budget-results-topic: dr.budget-results
+    budget_results_dlt: "budget-results.DLT"
+    budget_results_dlt_group: "budget-result-dlt-group"

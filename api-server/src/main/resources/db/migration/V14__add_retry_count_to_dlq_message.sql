@@ -1,0 +1,2 @@
+ALTER TABLE dlq_message_entity
+ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0;

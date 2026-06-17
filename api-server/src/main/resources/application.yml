@@ -30,3 +30,9 @@ spring:
 feign:
   ad-streams:
     url: http://localhost:8083
+
+app:
+  kafka:
+    budget_results_dlt: budget-results.DLT
+    budget_results_dlt_group: budget-result-dlt-group
+    budget-results-topic: budget-results

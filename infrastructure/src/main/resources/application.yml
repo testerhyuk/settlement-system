@@ -1,0 +1,4 @@
+app:
+  kafka:
+    budget_results_dlt: "budget-results.DLT"
+    budget_results_dlt_group: "budget-result-dlt-group"
