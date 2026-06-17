@@ -11,4 +11,5 @@ public interface AdCampaignRepository {
     AdCampaign save(AdCampaign adCampaign);
     List<AdCampaign> findByEndDate(LocalDate endDate);
     List<AdCampaign> findAllByAdvertiserId(String advertiserId);
+    List<AdCampaign> findServingCandidates(LocalDate today);
 }

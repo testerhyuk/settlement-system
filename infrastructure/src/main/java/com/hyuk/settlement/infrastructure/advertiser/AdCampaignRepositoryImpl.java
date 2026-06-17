@@ -44,4 +44,9 @@ public class AdCampaignRepositoryImpl implements AdCampaignRepository {
     public List<AdCampaign> findAllByAdvertiserId(String advertiserId) {
         return adCampaignJpaRepository.findAllByAdvertiserId(advertiserId).stream().map(AdCampaignEntity::toAdCampaign).toList();
     }
+
+    @Override
+    public List<AdCampaign> findServingCandidates(LocalDate today) {
+        return adCampaignJpaRepository.findServingCandidates(today).stream().map(AdCampaignEntity::toAdCampaign).toList();
+    }
 }

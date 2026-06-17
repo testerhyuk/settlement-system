@@ -15,4 +15,12 @@ public interface AdCampaignJpaRepository extends JpaRepository<AdCampaignEntity,
     Optional<AdCampaignEntity> findByAdvertiserIdAndCampaignId(String advertiserId, String campaignId);
     List<AdCampaignEntity> findByEndDate(LocalDate endDate);
     List<AdCampaignEntity> findAllByAdvertiserId(String advertiserId);
+    @Query("""
+        select c
+        from AdCampaignEntity c
+        where c.status = com.hyuk.settlement.advertiser.AdCampaignStatus.ACTIVE
+          and c.startDate <= :today
+          and c.endDate >= :today
+        """)
+    List<AdCampaignEntity> findServingCandidates(@Param("today") LocalDate today);
 }
