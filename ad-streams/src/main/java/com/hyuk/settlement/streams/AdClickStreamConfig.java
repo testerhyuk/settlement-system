@@ -1,6 +1,8 @@
 package com.hyuk.settlement.streams;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.hyuk.settlement.shared.BudgetEvent;
 import com.hyuk.settlement.shared.BudgetResult;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +42,9 @@ public class AdClickStreamConfig {
     @Value("${app.kafka.budget-results-topic}")
     private String BUDGET_RESULTS_TOPIC;
 
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
     public KafkaStreamsConfiguration kafkaStreamsConfig(

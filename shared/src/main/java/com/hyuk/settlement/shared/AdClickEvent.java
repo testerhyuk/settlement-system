@@ -1,18 +1,25 @@
 package com.hyuk.settlement.shared;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
 
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class AdClickEvent {
+    @Builder.Default
+    private String clickId = UUID.randomUUID().toString();
+    private String impressionId;
     private String campaignId;
-    private Money cpcAmount;
-    private LocalDateTime clickedAt;
+    private String advertiserId;
+    private String userId;
+    private BigDecimal cpcAmount;
+    private Currency currency;
+    @Builder.Default
+    private Instant occurredAt = Instant.now();
 }

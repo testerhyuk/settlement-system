@@ -39,6 +39,9 @@ management:
       exposure:
         include: prometheus
   metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
     export:
       prometheus:
         enabled: true

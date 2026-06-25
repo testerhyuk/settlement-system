@@ -31,8 +31,28 @@ feign:
   ad-streams:
     url: http://localhost:8083
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+    export:
+      prometheus:
+        enabled: true
+
 app:
   kafka:
     budget_results_dlt: budget-results.DLT
     budget_results_dlt_group: budget-result-dlt-group
     budget-results-topic: budget-results
+    budget-events-topic: budget-events
+    ad-impressions-topic: ad-impressions
+    ad-clicks-topic: ad-clicks
+    ad-conversions-topic: ad-conversions
+    user-segments-topic: user-segments
+  segment-bootstrap:
+    enabled: true

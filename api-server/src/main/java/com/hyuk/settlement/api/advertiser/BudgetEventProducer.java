@@ -6,6 +6,7 @@ import com.hyuk.settlement.infrastructure.kafka.ClusterRouter;
 import com.hyuk.settlement.shared.BudgetEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +14,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class BudgetEventProducer {
 
-    private static final String TOPIC = "budget-events";
+    @Value("${app.kafka.budget-events-topic}")
+    private String topic;
 
     private final KafkaTemplate<String, String> primaryKafkaTemplate;
     private final KafkaTemplate<String, String> drKafkaTemplate;
@@ -45,7 +47,7 @@ public class BudgetEventProducer {
 
         KafkaTemplate<String, String> template = wasPrimary ? primaryKafkaTemplate : drKafkaTemplate;
 
-        template.send(TOPIC, key, value).whenComplete((result, ex) -> {
+        template.send(topic, key, value).whenComplete((result, ex) -> {
             if (ex == null) {
                 return; // 발행 성공
             }
@@ -65,7 +67,7 @@ public class BudgetEventProducer {
     }
 
     private void sendToDrWithLogging(BudgetEvent event, String key, String value) {
-        drKafkaTemplate.send(TOPIC, key, value).whenComplete((result, ex) -> {
+        drKafkaTemplate.send(topic, key, value).whenComplete((result, ex) -> {
             if (ex != null) {
                 log.error("DR 재발행도 실패 (eventId={}). 메시지 유실! 원인: {}",
                         event.getEventId(), ex.toString());

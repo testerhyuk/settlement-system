@@ -6,7 +6,20 @@ scrape_configs:
     static_configs:
       - targets: ['kafka-exporter:9308']
 
+  - job_name: 'api-server'
+    static_configs:
+      - targets: ['api-server:8080']
+    metrics_path: '/actuator/prometheus'
+
   - job_name: 'ad-streams'
     static_configs:
       - targets: ['ad-streams:8083']
     metrics_path: '/actuator/prometheus'
+
+  - job_name: 'clickhouse'
+    static_configs:
+      - targets: ['clickhouse:9363']
+
+  - job_name: 'ad-analytics-flink'
+    static_configs:
+      - targets: ['host.docker.internal:9250']

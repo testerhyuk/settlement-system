@@ -1,0 +1,8 @@
+.gradle
+**/.gradle
+build
+**/build
+.git
+.idea
+airflow/logs
+airflow/logs/**

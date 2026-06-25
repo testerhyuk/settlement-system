@@ -36,3 +36,6 @@ out/
 ### VS Code ###
 .vscode/
 /.env
+/docs/architecture-overview.md
+
+*.log

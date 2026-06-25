@@ -1,14 +1,12 @@
 package com.hyuk.settlement.shared;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,7 +19,7 @@ public class BudgetResult {
     private BudgetResultType resultType;
     private FailureReason reason;
     @Builder.Default
-    private LocalDateTime processedAt = LocalDateTime.now();
+    private Instant processedAt = Instant.now();
 
     public enum BudgetResultType {
         CHARGED,

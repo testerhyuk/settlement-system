@@ -2,6 +2,8 @@ services:
   postgresql:
     image: postgres:17
     container_name: postgres-settlement
+    mem_limit: 512m
+    mem_reservation: 256m
     ports:
       - "5433:5432"
     environment:
@@ -18,6 +20,8 @@ services:
   kafka-1:
     image: apache/kafka:3.7.0
     container_name: kafka-1
+    mem_limit: 768m
+    mem_reservation: 512m
     user: "1000:1000"
     ports:
       - "19092:19092"
@@ -34,6 +38,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
       CLUSTER_ID: settlement-kafka-cluster
     volumes:
       - kafka1_data:/var/lib/kafka/data
@@ -41,6 +46,8 @@ services:
   kafka-2:
     image: apache/kafka:3.7.0
     container_name: kafka-2
+    mem_limit: 768m
+    mem_reservation: 512m
     user: "1000:1000"
     ports:
       - "29092:29092"
@@ -57,6 +64,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
       CLUSTER_ID: settlement-kafka-cluster
     volumes:
       - kafka2_data:/var/lib/kafka/data
@@ -64,6 +72,8 @@ services:
   kafka-3:
     image: apache/kafka:3.7.0
     container_name: kafka-3
+    mem_limit: 768m
+    mem_reservation: 512m
     user: "1000:1000"
     ports:
       - "39092:39092"
@@ -80,6 +90,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
       CLUSTER_ID: settlement-kafka-cluster
     volumes:
       - kafka3_data:/var/lib/kafka/data
@@ -87,6 +98,8 @@ services:
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
+    mem_limit: 384m
+    mem_reservation: 256m
     ports:
       - "8090:8080"
     environment:
@@ -100,6 +113,8 @@ services:
   kafka-exporter:
     image: danielqsj/kafka-exporter:latest
     container_name: kafka-exporter
+    mem_limit: 128m
+    mem_reservation: 64m
     ports:
       - "9308:9308"
     command:
@@ -114,6 +129,8 @@ services:
   prometheus:
     image: prom/prometheus:v2.51.0
     container_name: prometheus
+    mem_limit: 512m
+    mem_reservation: 256m
     ports:
       - "9090:9090"
     volumes:
@@ -121,10 +138,15 @@ services:
       - prometheus_data:/prometheus
     depends_on:
       - kafka-exporter
+      - api-server
+      - ad-streams
+      - clickhouse
 
   grafana:
     image: grafana/grafana:10.4.0
     container_name: grafana
+    mem_limit: 256m
+    mem_reservation: 128m
     ports:
       - "3000:3000"
     environment:
@@ -133,13 +155,17 @@ services:
       - prometheus
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
 
   api-server:
     build:
       context: .
       dockerfile: Dockerfile.api
     container_name: api-server
+    mem_limit: 768m
+    mem_reservation: 512m
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:InitialRAMPercentage=30 -XX:MaxRAMPercentage=60
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/settlement-system
       - SPRING_DATASOURCE_USERNAME=hyuk
@@ -163,6 +189,8 @@ services:
   nginx:
     image: nginx:latest
     container_name: nginx
+    mem_limit: 128m
+    mem_reservation: 64m
     ports:
       - "80:80"
     volumes:
@@ -178,7 +206,10 @@ services:
       context: .
       dockerfile: Dockerfile.streams
     container_name: ad-streams
+    mem_limit: 768m
+    mem_reservation: 512m
     environment:
+      - JAVA_TOOL_OPTIONS=-XX:InitialRAMPercentage=30 -XX:MaxRAMPercentage=60
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/settlement-system
       - SPRING_DATASOURCE_USERNAME=hyuk
@@ -197,21 +228,27 @@ services:
   k6:
     image: grafana/k6:latest
     container_name: k6
+    mem_limit: 256m
+    mem_reservation: 128m
     volumes:
       - ./k6:/scripts
-    command: run /scripts/click-test.js
+    command: run /scripts/ad-analytics-load-test.js
     depends_on:
       - nginx
 
   redis-lock:
     image: redis:7
     container_name: redis-lock
+    mem_limit: 128m
+    mem_reservation: 64m
     ports:
       - "6380:6379"
 
   redis-cache-master:
     image: redis:7
     container_name: redis-cache-master
+    mem_limit: 256m
+    mem_reservation: 128m
     ports:
       - "6390:6379"
     command: redis-server --appendonly yes
@@ -219,6 +256,8 @@ services:
   redis-cache-replica:
     image: redis:7
     container_name: redis-cache-replica
+    mem_limit: 256m
+    mem_reservation: 128m
     ports:
       - "6391:6379"
     command: redis-server --replicaof redis-cache-master 6379 --appendonly yes
@@ -228,6 +267,8 @@ services:
   redis-sentinel-1:
     image: redis:7
     container_name: redis-sentinel-1
+    mem_limit: 128m
+    mem_reservation: 64m
     ports:
       - "26379:26379"
     command: >
@@ -245,6 +286,8 @@ services:
   redis-sentinel-2:
     image: redis:7
     container_name: redis-sentinel-2
+    mem_limit: 128m
+    mem_reservation: 64m
     ports:
       - "26380:26379"
     command: >
@@ -262,6 +305,8 @@ services:
   redis-sentinel-3:
     image: redis:7
     container_name: redis-sentinel-3
+    mem_limit: 128m
+    mem_reservation: 64m
     ports:
       - "26381:26379"
     command: >
@@ -279,6 +324,8 @@ services:
   kafka-dr-1:
     image: apache/kafka:3.7.0
     container_name: kafka-dr-1
+    mem_limit: 768m
+    mem_reservation: 512m
     user: "1000:1000"
     ports:
       - "49092:49092"
@@ -297,12 +344,15 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: settlement-kafka-cluster-dr
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
     volumes:
       - kafka_dr_1_data:/var/lib/kafka/data
 
   kafka-dr-2:
     image: apache/kafka:3.7.0
     container_name: kafka-dr-2
+    mem_limit: 768m
+    mem_reservation: 512m
     user: "1000:1000"
     ports:
       - "49093:49093"
@@ -321,12 +371,15 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: settlement-kafka-cluster-dr
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
     volumes:
       - kafka_dr_2_data:/var/lib/kafka/data
 
   kafka-dr-3:
     image: apache/kafka:3.7.0
     container_name: kafka-dr-3
+    mem_limit: 768m
+    mem_reservation: 512m
     user: "1000:1000"
     ports:
       - "49094:49094"
@@ -345,13 +398,18 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: settlement-kafka-cluster-dr
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
     volumes:
       - kafka_dr_3_data:/var/lib/kafka/data
 
   mirror-maker:
     image: apache/kafka:3.7.0
     container_name: mirror-maker
+    mem_limit: 512m
+    mem_reservation: 256m
     user: "1000:1000"
+    environment:
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx384m"
     depends_on:
       - kafka-1
       - kafka-2
@@ -364,6 +422,27 @@ services:
     command: >
       /opt/kafka/bin/connect-mirror-maker.sh /opt/kafka/config/mm2.properties
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: clickhouse-settlement
+    mem_limit: 1536m
+    mem_reservation: 1g
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9363:9363"
+    environment:
+      CLICKHOUSE_DB: settlement_analytics
+      CLICKHOUSE_USER: hyuk
+      CLICKHOUSE_PASSWORD: password
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./monitoring/clickhouse/prometheus.xml:/etc/clickhouse-server/config.d/prometheus.xml
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
 volumes:
   postgres_data:
   kafka1_data:
@@ -374,6 +453,7 @@ volumes:
   kafka_dr_1_data:
   kafka_dr_2_data:
   kafka_dr_3_data:
+  clickhouse-data:
 
 networks:
   default:

@@ -1,0 +1,383 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "10.4.0",
+      "targets": [
+        {
+          "expr": "up{job=\"api-server\"}",
+          "legendFormat": "api-server :8080",
+          "refId": "A"
+        },
+        {
+          "expr": "up{job=\"ad-streams\"}",
+          "legendFormat": "ad-streams :8083",
+          "refId": "B"
+        },
+        {
+          "expr": "up{job=\"kafka-exporter\"}",
+          "legendFormat": "kafka-exporter :9308",
+          "refId": "C"
+        },
+        {
+          "expr": "up{job=\"clickhouse\"}",
+          "legendFormat": "clickhouse :9363",
+          "refId": "D"
+        },
+        {
+          "expr": "up{job=\"ad-analytics-flink\"}",
+          "legendFormat": "ad-analytics-flink :9250",
+          "refId": "E"
+        }
+      ],
+      "title": "Target Health",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 5
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"api-server\"}[1m]))",
+          "legendFormat": "api-server",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"ad-streams\"}[1m]))",
+          "legendFormat": "ad-streams",
+          "refId": "B"
+        }
+      ],
+      "title": "Spring HTTP RPS",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 5
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"api-server\"}[1m])) by (le)) * 1000",
+          "legendFormat": "api p95",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"api-server\"}[1m])) by (le)) * 1000",
+          "legendFormat": "api p99",
+          "refId": "B"
+        }
+      ],
+      "title": "API Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"api-server\",status!~\"2..\"}[1m])) / clamp_min(sum(rate(http_server_requests_seconds_count{job=\"api-server\"}[1m])), 0.001)",
+          "legendFormat": "api error rate",
+          "refId": "A"
+        }
+      ],
+      "title": "API Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "clamp_min(sum(kafka_consumergroup_lag{consumergroup=~\"ad-analytics-.*\"}) by (consumergroup), 0)",
+          "legendFormat": "{{consumergroup}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Kafka Consumer Lag",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_topic_partition_current_offset{topic=~\"ad-impressions|ad-clicks|ad-conversions|budget-results\"}[1m])) by (topic)",
+          "legendFormat": "{{topic}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Kafka Topic Ingress",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rows/sec"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "rate(ClickHouseProfileEvents_InsertedRows{job=\"clickhouse\"}[1m])",
+          "legendFormat": "inserted rows",
+          "refId": "A"
+        }
+      ],
+      "title": "ClickHouse Inserted Rows",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "ClickHouseAsyncMetrics_MemoryResident{job=\"clickhouse\"}",
+          "legendFormat": "resident memory",
+          "refId": "A"
+        },
+        {
+          "expr": "ClickHouseMetrics_MemoryTracking{job=\"clickhouse\"}",
+          "legendFormat": "memory tracking",
+          "refId": "B"
+        }
+      ],
+      "title": "ClickHouse Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
+      "id": 9,
+      "targets": [
+        {
+          "expr": "sum(flink_taskmanager_job_task_numRecordsInPerSecond{job=\"ad-analytics-flink\"})",
+          "legendFormat": "records in",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(flink_taskmanager_job_task_numRecordsOutPerSecond{job=\"ad-analytics-flink\"})",
+          "legendFormat": "records out",
+          "refId": "B"
+        }
+      ],
+      "title": "Flink Records",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 29
+      },
+      "id": 10,
+      "targets": [
+        {
+          "expr": "max({job=\"ad-analytics-flink\", __name__=~\".*lastCheckpointDuration.*|.*checkpoint.*duration.*\"})",
+          "legendFormat": "checkpoint duration",
+          "refId": "A"
+        }
+      ],
+      "title": "Flink Checkpoint Duration",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": [
+    "settlement",
+    "operations",
+    "portfolio"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Settlement System Operations",
+  "uid": "settlement-operations",
+  "version": 1,
+  "weekStart": ""
+}
