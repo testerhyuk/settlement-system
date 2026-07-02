@@ -5,7 +5,6 @@ import com.hyuk.settlement.shared.AdClickEvent;
 import com.hyuk.settlement.shared.AdConversionEvent;
 import com.hyuk.settlement.shared.AdImpressionEvent;
 import com.hyuk.settlement.shared.UserSegmentEvent;
-import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
@@ -34,19 +33,16 @@ public class SegmentPerformancePipeline {
         DataStream<SegmentPerformanceEvent> conversionStream =
                 conversionEventStream.map(SegmentPerformanceEvent::conversion);
 
+        DataStream<SegmentPerformanceEvent> userSegmentStream =
+                userSegmentEventStream.map(SegmentPerformanceEvent::userSegment);
+
         DataStream<SegmentPerformanceEvent> segmentPerformanceEventStream =
                 impressionStream
-                        .union(clickStream, conversionStream);
-
-        BroadcastStream<UserSegmentEvent> userSegmentBroadcastStream =
-                userSegmentEventStream.broadcast(
-                        SegmentPerformanceEnrichmentFunction.USER_SEGMENT_STATE_DESCRIPTOR,
-                        SegmentPerformanceEnrichmentFunction.SEGMENT_BOOTSTRAP_STATE_DESCRIPTOR
-                );
+                        .union(clickStream, conversionStream, userSegmentStream);
 
         SingleOutputStreamOperator<SegmentPerformanceInput> segmentPerformanceInputStream =
                 segmentPerformanceEventStream
-                        .connect(userSegmentBroadcastStream)
+                        .keyBy(SegmentPerformanceEvent::userId)
                         .process(new SegmentPerformanceEnrichmentFunction());
 
         DataStream<UnknownSegmentEvent> unknownSegmentStream =

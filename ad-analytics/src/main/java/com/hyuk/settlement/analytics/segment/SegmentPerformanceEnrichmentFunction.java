@@ -1,88 +1,48 @@
 package com.hyuk.settlement.analytics.segment;
 
 import com.hyuk.settlement.shared.UserSegmentEvent;
-import org.apache.flink.api.common.state.BroadcastState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.state.ReadOnlyBroadcastState;
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.streaming.api.functions.co.BroadcastProcessFunction;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SegmentPerformanceEnrichmentFunction
-        extends BroadcastProcessFunction<
-        SegmentPerformanceEvent,
-        UserSegmentEvent,
-        SegmentPerformanceInput
-        > {
+        extends KeyedProcessFunction<String, SegmentPerformanceEvent, SegmentPerformanceInput> {
 
     public static final OutputTag<UnknownSegmentEvent> UNKNOWN_SEGMENT_TAG =
             new OutputTag<UnknownSegmentEvent>("unknown-segment") {};
 
-    public static final MapStateDescriptor<String, List<String>> USER_SEGMENT_STATE_DESCRIPTOR =
-            new MapStateDescriptor<>(
-                    "user-segment-broadcast-state",
-                    TypeInformation.of(String.class),
-                    TypeInformation.of(new TypeHint<List<String>>() {})
-            );
-
-    public static final MapStateDescriptor<String, Boolean> SEGMENT_BOOTSTRAP_STATE_DESCRIPTOR =
-            new MapStateDescriptor<>(
-                    "segment-bootstrap-state",
-                    TypeInformation.of(String.class),
-                    TypeInformation.of(Boolean.class)
-            );
-
-    private static final String BOOTSTRAP_COMPLETE_KEY = "BOOTSTRAP_COMPLETE";
+    private transient ValueState<List<String>> userSegmentState;
 
     @Override
-    public void processBroadcastElement(
-            UserSegmentEvent event,
-            Context context,
-            Collector<SegmentPerformanceInput> out
-    ) throws Exception {
-        if (event.isBootstrapComplete()) {
-            BroadcastState<String, Boolean> bootstrapState =
-                    context.getBroadcastState(SEGMENT_BOOTSTRAP_STATE_DESCRIPTOR);
-
-            bootstrapState.put(BOOTSTRAP_COMPLETE_KEY, true);
-            return;
-        }
-
-        context.getBroadcastState(USER_SEGMENT_STATE_DESCRIPTOR)
-                .put(event.getUserId(), event.getSegmentIds());
+    public void open(Configuration parameters) {
+        ValueStateDescriptor<List<String>> descriptor =
+                new ValueStateDescriptor<>(
+                        "user-segment-keyed-state",
+                        TypeInformation.of(new TypeHint<List<String>>() {})
+                );
+        userSegmentState = getRuntimeContext().getState(descriptor);
     }
 
     @Override
     public void processElement(
             SegmentPerformanceEvent event,
-            ReadOnlyContext context,
+            Context context,
             Collector<SegmentPerformanceInput> out
     ) throws Exception {
-        ReadOnlyBroadcastState<String, Boolean> bootstrapState =
-                context.getBroadcastState(SEGMENT_BOOTSTRAP_STATE_DESCRIPTOR);
-
-        Boolean bootstrapComplete = bootstrapState.get(BOOTSTRAP_COMPLETE_KEY);
-
-        if (!Boolean.TRUE.equals(bootstrapComplete)) {
-            context.output(
-                    UNKNOWN_SEGMENT_TAG,
-                    UnknownSegmentEvent.builder()
-                            .userId(event.userId())
-                            .campaignId(campaignIdOf(event))
-                            .eventType(event.getType())
-                            .reason("SEGMENT_BOOTSTRAP_NOT_COMPLETED")
-                            .build()
-            );
+        if (event.getType() == SegmentPerformanceEventType.USER_SEGMENT) {
+            updateUserSegmentState(event.getUserSegmentEvent());
             return;
         }
 
-        List<String> segmentIds = context
-                .getBroadcastState(USER_SEGMENT_STATE_DESCRIPTOR)
-                .get(event.userId());
+        List<String> segmentIds = userSegmentState.value();
 
         if (segmentIds == null || segmentIds.isEmpty()) {
             context.output(
@@ -100,6 +60,14 @@ public class SegmentPerformanceEnrichmentFunction
         for (String segmentId : segmentIds) {
             emitInput(segmentId, event, out);
         }
+    }
+
+    private void updateUserSegmentState(UserSegmentEvent event) throws Exception {
+        if (event.isBootstrapComplete()) {
+            return;
+        }
+
+        userSegmentState.update(new ArrayList<>(event.getSegmentIds()));
     }
 
     private void emitInput(
